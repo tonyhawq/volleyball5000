@@ -1,9 +1,14 @@
 #include "Particles.h"
 
+#include <ppl.h>
+
+#include "random.h"
+
 vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, SDL_Texture* texture, SDL_Rect box, float rotation, float rotationSpeed)
 	:lifespan(lifespan), pos(pos), vel(vel), texture(texture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan)
 {
 	this->texture.setPos(this->pos);
+	this->texture.responsible = false;
 }
 
 void vbl::Particle::update()
@@ -35,13 +40,13 @@ void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf:
 	for (uint32_t i = 0; i < variations; i++)
 	{
 		spawnParticle(
-			lifespan + rand() % (int)varDist,
-			{ pos.x + float(rand() % (int)varDist * 20) / 20.0f, pos.y + float(rand() % (int)varDist * 20) / 20.0f },
-			{ vel.x + float(rand() % (int)varDist * 20) / 20.0f, vel.y + float(rand() % (int)varDist * 20) / 20.0f },
+			lifespan + maf::random(-varDist, varDist),
+			{ pos.x + maf::random(-varDist, varDist), pos.y + maf::random(-varDist, varDist) },
+			{ vel.x + maf::random(-varDist, varDist), vel.y + maf::random(-varDist, varDist) },
 			texture,
 			box,
-			rotation + float(rand() % (int)varDist * 20) / 20.0f,
-			rotationSpeed + float(rand() % (int)varDist * 20) / 20.0f
+			rotation + maf::random(-varDist, varDist),
+			rotationSpeed + maf::random(-varDist, varDist)
 			);
 	}
 }
@@ -62,10 +67,19 @@ void vbl::ParticleManager::process()
 			eraseLast = false;
 		}
 		iter->update();
-		if (!iter->lifespan)
+		if (!iter->lifespan || !iter->getTexture().getTexture())
 		{
 			eraseLast = true;
 		}
 		lastIter = iter;
+	}
+}
+
+void vbl::ParticleManager::addParticles(std::vector<Particle>& particles)
+{
+	while (particles.size())
+	{
+		this->particles.push_back(particles[particles.size() - 1]);
+		particles.pop_back();
 	}
 }

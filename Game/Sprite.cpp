@@ -1,16 +1,30 @@
 #include "Sprite.h"
 
 
-vbl::SpriteTexture::SpriteTexture(SDL_Texture* texture, SDL_Rect box, float rotation)
-	:texture(texture), textureBox(box), rotation(rotation)
+vbl::SpriteTexture::SpriteTexture(SDL_Texture* texture, SDL_Rect box, float rotation, bool responsible)
+	:texture(texture), textureBox(box), rotation(rotation), spriteDimensions({box.w, box.h}), animState(0), responsible(responsible)
 {
 	
 }
 
 vbl::SpriteTexture::SpriteTexture()
-	:texture(NULL), textureBox({0,0,0,0}), rotation(0)
+	:texture(NULL), textureBox({ 0,0,0,0 }), rotation(0), animState(0), responsible(true)
 {
 
+}
+
+vbl::SpriteTexture::SpriteTexture(SDL_Texture* texture, SDL_Rect box, float rotation, maf::ivec2 spriteDimensions, bool responsible)
+	:texture(texture), textureBox(box), rotation(rotation), spriteDimensions(spriteDimensions), animState(0), responsible(responsible)
+{
+	
+}
+
+vbl::SpriteTexture::~SpriteTexture()
+{
+	if (responsible)
+	{
+		SDL_DestroyTexture(this->texture);
+	}
 }
 
 vbl::Sprite::Sprite(maf::fvec2 dimensions, SDL_Texture* tex, bool useDimensionsForBox)
@@ -21,6 +35,19 @@ vbl::Sprite::Sprite(maf::fvec2 dimensions, SDL_Texture* tex, bool useDimensionsF
 	}
 	this->texture.resize({(int)dimensions.x, (int)dimensions.y});
 	this->texture.setTexture(tex);
+	this->setPos({ 0,0 });
+}
+
+vbl::Sprite::Sprite(maf::fvec2 dimensions, SDL_Texture* tex, maf::ivec2 spriteDimensions, bool useDimensionsForBox)
+{
+	if (useDimensionsForBox)
+	{
+		this->box = MAABB({ {0,0,dimensions.x, dimensions.y} });
+	}
+	this->texture.resize({ (int)dimensions.x, (int)dimensions.y });
+	this->texture.setTexture(tex);
+	this->texture.setSpriteWidth(spriteDimensions.x);
+	this->texture.setSpriteHeight(spriteDimensions.y);
 	this->setPos({ 0,0 });
 }
 

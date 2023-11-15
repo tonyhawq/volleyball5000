@@ -1,4 +1,5 @@
 #include "Guy.h"
+#include "random.h"
 
 vbl::Controller::Controller(const std::string& name, uint16_t team)
 	:name(name), dashQueuedown(0), jumpQueuedown(0), team(team)
@@ -90,7 +91,7 @@ vbl::MAABB vbl::Guy::makeCircle(float diameter)
 }
 
 vbl::Guy::Guy(const std::string& name, float diameter, SDL_Texture* texture, Controller* controller)
-	:Sprite({ diameter, diameter }, texture)
+	: GameSprite({ diameter, diameter }, texture)
 {
 	this->name = name;
 	if (controller)
@@ -112,7 +113,30 @@ void vbl::Guy::jump()
 	{
 		return;
 	}
-	this->vel.y = float(- int(this->jumpPower));
+	if (!this->onGround)
+	{
+		for (int i = 0; i < 20; i++)
+		{
+			this->spawnParticle(
+				120,
+				{ (float)this->texture.getMiddle().x, (float)this->texture.getMiddle().y },
+				{ 0,0 },
+				this->getParticle("air"),
+				{ 0,0,24,24 },
+				0,
+				0,
+				10
+			);
+		}
+	}
+	if (this->vel.y - float(this->jumpPower) / 2 > -float(this->jumpPower))
+	{
+		this->vel.y = -float(this->jumpPower);
+	}
+	else
+	{
+		this->vel.y -= float(this->jumpPower) / 2;
+	}
 	this->dashing = 0;
 	this->vel.x *= 1.2f;
 	this->jumps++;
@@ -215,8 +239,14 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 	}
 }
 
-void vbl::Guy::update(const Geometry& geometry)
+void vbl::Guy::update(const Geometry& geometry, uint16_t tick)
 {
+	updatePowerups();
+	maf::ivec2 input = { 0,0 };
+	if (this->controller)
+	{
+		input = this->controller->getInput();
+	}
 	this->vel.y += this->gravity;
 	if (this->vel.y > this->terminalVelocity)
 	{
@@ -258,6 +288,22 @@ void vbl::Guy::update(const Geometry& geometry)
 			this->dashes--;
 			this->dashCurrent = 0;
 		}
+		if (abs(this->vel.x) > 0.5f)
+		{
+			if (!(tick % (11 - (int)maf::clamp(abs(this->vel.x), 10.0f, 0.0f))))
+			{
+				this->spawnParticle(
+					120,
+					{ (float)this->getTexture().feet().x, (float)this->getTexture().feet().y },
+					{ 0,0 },
+					this->getParticle("grd"),
+					{ 0,0,16,16 },
+					0,
+					0,
+					abs(this->vel.x)
+				);
+			}
+		}
 	}
 	else
 	{
@@ -267,4 +313,89 @@ void vbl::Guy::update(const Geometry& geometry)
 	{
 		this->vel.x = 0;
 	}
+	if (this->jumps > 1 && (!(tick % 8)))
+	{
+		this->spawnParticle(
+			120,
+			{ (float)this->texture.getMiddle().x, (float)this->texture.getMiddle().y },
+			{ 0,0 },
+			this->getParticle("air"),
+			{ 0,0,24,24 },
+			0,
+			0,
+			10
+		);
+	}
+	if (this->controller)
+	{
+		int animState = 0;
+		if (abs(input.x))
+		{
+			animState++;
+			if (input.x > 0)
+			{
+				animState++;
+			}
+		}
+		if (input.y > 0)
+		{
+			animState = 3;
+		}
+		this->texture.setAnimState(animState);
+	}
 }
+
+void vbl::Guy::updatePowerups()
+{
+	for (int i = 0; i < powers.size(); i++)
+	{
+		Powerup& power = powers[i];
+		power.remaining--;
+		if (power.remaining < 0)
+		{
+			removePower(power.type);
+			powers.erase(powers.begin() + i);
+			i--;
+		}
+	}
+}
+void vbl::Guy::clearPowerups()
+{
+	while (powers.size())
+	{
+		this->removePower(powers[powers.size() - 1].type);
+		powers.pop_back();
+	}
+}
+
+void vbl::Guy::applyPower(Ball::PowerupType type)
+{
+	switch (type)
+	{
+	case Ball::POWERUP_TRIPLEJUMP:
+		this->maxJumps++;
+		break;
+	default:
+		break;
+	}
+}
+
+void vbl::Guy::removePower(Ball::PowerupType type)
+{
+	switch (type)
+	{
+	case Ball::POWERUP_TRIPLEJUMP:
+		this->maxJumps--;
+		break;
+	default:
+		break;
+	}
+}
+
+void vbl::Guy::powerup(Ball::PowerupType powerup, float duration)
+{
+	this->powers.push_back({ powerup, duration });
+	applyPower(powerup);
+}
+
+

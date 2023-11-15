@@ -2,10 +2,15 @@
 
 int main(int args, char* argc[])
 {
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	vbl::Game game = vbl::Game(1920, 1080, 0.25);
+	game.sound.loadSound({ "content/sound/boink1.wav", "content/sound/boink2.wav", "content/sound/boink3.wav" }, "boink");
+	game.sound.loadSound({ "content/sound/crunch1.wav", "content/sound/crunch2.wav", "content/sound/crunch3.wav" }, "crunch");
+
+	game.map.load("content/maps/1.vbl5");
+
 	game.makeController("Player 1", 1);
-	game.makeGuy("guy-1", "guy.png");
+	game.makeGuy("guy-1", "content/graphics/guy_sheet.png", {20,20});
 	game.linkController("Player 1", "guy-1");
 	vbl::Controller* ctrl = game.getController("Player 1");
 	ctrl->setKey((int)SDLK_w, vbl::Controller::InputIDX::INPUT_UP);
@@ -15,7 +20,7 @@ int main(int args, char* argc[])
 	ctrl->setKey((int)SDLK_LSHIFT, vbl::Controller::InputIDX::INPUT_DASH);
 
 	game.makeController("Player 2", 2);
-	game.makeGuy("guy-2", "guy2.png");
+	game.makeGuy("guy-2", "content/graphics/guy_sheet2.png", {20,20});
 	game.linkController("Player 2", "guy-2");
 	ctrl = game.getController("Player 2");
 	ctrl->setKey((int)SDLK_UP, vbl::Controller::InputIDX::INPUT_UP);
@@ -24,32 +29,22 @@ int main(int args, char* argc[])
 	ctrl->setKey((int)SDLK_RIGHT, vbl::Controller::InputIDX::INPUT_RIGHT);
 	ctrl->setKey((int)SDLK_RSHIFT, vbl::Controller::InputIDX::INPUT_DASH);
 
-	game.unlink("guy-1");
-	game.linkController("Player 1", "guy-1");
+	game.loadEffectSprite(vbl::Ball::POWERUP_TRIPLEJUMP, "content/graphics/stat_triple.png");
+	game.loadEffectSprite(vbl::Ball::POWERUP_DOUBLEPOINTS, "content/graphics/stat_doublepoints.png");
 
-	float netWidth = 20;
+	game.setWaitingScreen(1, { 0, 0, 1920 / 2, 1080 }, "content/graphics/waiting_left.png");
+	game.setWaitingScreen(2, { 1920 / 2, 0, 1920 / 2, 1080 }, "content/graphics/waiting_right.png");
 
-	vbl::Geometry geometry = vbl::Geometry({
-		{ {  0,    790, 960,  1000 }, 2, true },
-		{ {  960,  790, 960,  1000 }, 1, true },
-		{ { -2000, 800, 4000, 1000 }, 0, false },
-		{ { -10,   -500,   10,   2000 }, 0, false },
-		{ {  1920, -500,   10,   2000 }, 0, false },
-		{ {  1920 / 2 - netWidth / 2,  400, netWidth,  1000 }, 0, false },
-		{ {  0,    0,   1920 / 2 - netWidth / 2 + netWidth, 1000 }, 2, false },
-		{ {  1920 / 2 - netWidth / 2,  0,   1920 / 2 - netWidth / 2 + netWidth, 1000 }, 1, false },
-		}, {
-		{ {-10, 800, 2000, 2000}, {50, 168, 82, 255} },
-		{ {1920 / 2 - netWidth / 2, 400, netWidth, 1000}, {107, 80, 35, 255} },
-		});
-	game.map.setGeometry(geometry);
-	game.map.gravity = 0.25;
-	game.map.setSpawnPoint(1, { 20,700 });
-	game.map.setSpawnPoint(2, { 1820, 700 });
-	game.respawnGuys();
-	game.makeBall({ 920, 100 }, "ball.png");
-	game.map.setBallSpawnVel({ 10, -5 });
+	game.renderer.loadChars("text/font_1.png", {255, 255, 255, 255});
+	game.makeBall({ 0,0 }, "content/graphics/ball.png", "content/graphics/ball_glow.png");
 	game.map.resetMap();
+	vbl::Game::TeamData* team = NULL;
+	team = game.changeTeam(1);
+	team->scoreTextPos = { 480, 940 };
+	team = game.changeTeam(2);
+	team->scoreTextPos = { 1440, 940 };
+	game.sound.loadMusic("content/Gymnopedie No 1.mp3", "goime500");
+	game.sound.playMusic("goime500");
 	game.run();
 	return 0;
 }

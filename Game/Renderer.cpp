@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 #include <SDL_image.h>
+#include <iostream>
+#include <filesystem>
 
 vbl::Renderer::Renderer(uint32_t width, uint32_t height, float renderScale)
 	:renderer(NULL), window(NULL), target(NULL), renderScale(renderScale)
@@ -39,6 +41,42 @@ void vbl::Renderer::scaleRect(SDL_Rect* rect)
 	rect->h = int(rect->h * this->renderScale);
 }
 
+void vbl::Renderer::mapRect(SDL_Rect* rect)
+{
+	if (!rect)
+	{
+		return;
+	}
+	rect->x = int((rect->x + this->pos.x) * this->renderScale);
+	rect->y = int((rect->y + this->pos.y) * this->renderScale);
+	rect->w = int(rect->w * this->renderScale);
+	rect->h = int(rect->h * this->renderScale);
+}
+
+void vbl::Renderer::mapRect(maf::frect* rect)
+{
+	if (!rect)
+	{
+		return;
+	}
+	rect->x = (rect->x + this->pos.x) * this->renderScale;
+	rect->y = (rect->y + this->pos.y) * this->renderScale;
+	rect->w = rect->w * this->renderScale;
+	rect->h = rect->h * this->renderScale;
+}
+
+void vbl::Renderer::mapRect(SDL_FRect* rect)
+{
+	if (!rect)
+	{
+		return;
+	}
+	rect->x = (rect->x + this->pos.x) * this->renderScale;
+	rect->y = (rect->y + this->pos.y) * this->renderScale;
+	rect->w = rect->w * this->renderScale;
+	rect->h = rect->h * this->renderScale;
+}
+
 void vbl::Renderer::clearFrame()
 {
 	SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
@@ -70,29 +108,31 @@ void vbl::Renderer::renderSprite(const SpriteTexture& sprite)
 {
 	SDL_SetRenderDrawColor(this->renderer, 255, 255, 0, 255);
 	SDL_Rect scaled = *sprite.getRect();
-	scaleRect(&scaled);
-	SDL_RenderDrawRect(this->renderer, &scaled);
-	SDL_RenderCopyEx(this->renderer, sprite.getTexture(), NULL, &scaled, sprite.getRotation(), NULL, SDL_FLIP_NONE);
-	maf::ivec2 middle = sprite.getMiddle();
+	mapRect(&scaled);
+	//SDL_RenderDrawRect(this->renderer, &scaled);
+	SDL_Rect* clipping = NULL;
+	SDL_Rect animClippingRect = sprite.getClippingRect();
+	if (sprite.isAnimated())
+	{
+		clipping = &animClippingRect;
+	}
+	SDL_RenderCopyEx(this->renderer, sprite.getTexture(), clipping, &scaled, sprite.getRotation(), NULL, SDL_FLIP_NONE);
+	/*maf::ivec2 middle = sprite.getMiddle();
 	SDL_RenderDrawLine(
 		this->renderer,
 		int(middle.x * renderScale),
 		int(middle.y * renderScale),
 		int((middle.x + int(std::sin(maf::degreesToRad(sprite.getRotation())) * 100.0f)) * renderScale),
-		int((middle.y + int(std::cos(maf::degreesToRad(sprite.getRotation())) * 100.0f)) * renderScale));
+		int((middle.y + int(std::cos(maf::degreesToRad(sprite.getRotation())) * 100.0f)) * renderScale));*/
 }
 
 void vbl::Renderer::renderBoundingBox(const MAABB& box, SDL_Color clr)
 {
 	SDL_SetRenderDrawColor(this->renderer, clr.r, clr.g, clr.b, clr.a);
-	maf::frect max = { 999999999.0f, 999999999.0f, -999999999.0f, -999999999.0f };
 	for (const auto& rect : box.getBoxes())
 	{
-		max.x = std::min(max.x, rect.x);
-		max.y = std::min(max.y, rect.y);
-		max.w = std::max(max.w, rect.x + rect.w);
-		max.h = std::max(max.h, rect.x + rect.h);
-		SDL_FRect frect = { rect.x * renderScale, rect.y * renderScale, rect.w * renderScale, rect.h * renderScale };
+		SDL_FRect frect = { rect.x, rect.y, rect.w, rect.h };
+		mapRect(&frect);
 		if (SDL_RenderDrawRectF(this->renderer, &frect)) { printf("%s\n", SDL_GetError()); }
 	}
 }
@@ -102,7 +142,8 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry)
 	for (const auto& rect : geometry.getRects())
 	{
 		SDL_SetRenderDrawColor(this->renderer, rect.clr.r, rect.clr.g, rect.clr.b, rect.clr.a);
-		SDL_Rect temp = { int(rect.box.x * renderScale), int(rect.box.y * renderScale), int(rect.box.w * renderScale), int(rect.box.h * renderScale) };
+		SDL_Rect temp = { rect.box.x, rect.box.y, rect.box.w, rect.box.h };
+		mapRect(&temp);
 		SDL_RenderFillRect(this->renderer, &temp);
 		SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
 		SDL_RenderDrawRect(this->renderer, &temp);
@@ -145,7 +186,7 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry, bool debug)
 	}
 }
 
-void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points)
+void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points, SDL_Texture* endTex)
 {
 	if (points.size() < 2)
 	{
@@ -158,15 +199,21 @@ void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points)
 		SDL_RenderDrawLine(this->renderer, int(lastPoint.x * renderScale), int(lastPoint.y * renderScale), int(points[i].x * renderScale), int(points[i].y * renderScale));
 		lastPoint = points[i];
 	}
+	const int diam = 44;
+	SDL_Rect end = { (lastPoint.x - diam / 2) * renderScale, (lastPoint.y - diam / 2) * renderScale, diam * renderScale, diam * renderScale };
+	SDL_RenderCopy(this->renderer, endTex, NULL, &end);
 }
 
-SDL_Texture* vbl::Renderer::load(const std::string& path)
+SDL_Texture* vbl::Renderer::load(const std::string& path, bool ignoreMissing)
 {
 	SDL_Surface* surf = IMG_Load(path.c_str());
 	if (!surf)
 	{
 		printf("%s\n", IMG_GetError());
-		return NULL;
+		if (!ignoreMissing)
+		{
+			surf = IMG_Load(this->missingTex.c_str());
+		}
 	}
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surf);
 	if (!texture)
@@ -174,5 +221,68 @@ SDL_Texture* vbl::Renderer::load(const std::string& path)
 		printf("%s\n", SDL_GetError());
 	}
 	SDL_FreeSurface(surf);
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 	return texture;
+}
+
+void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
+{
+	char charset[] = {
+		'_', '0', '1', '2', '3', '4',
+		'5', '6', '7', '8', '9', 'a',
+		'b', 'c', 'd', 'e', 'f', 'g',
+		'h', 'i', 'j', 'k', 'l', 'm',
+		'n', 'o', 'p', 'q', 'r', 's',
+		't', 'u', 'v', 'w', 'x', 'y',
+		'z', '.', '*', '-', ','
+	};
+	int i = 0;
+	int characterW = 5;
+	int characterH = 7;
+	SDL_Rect clip = { 0,0,characterW,characterH };
+	SDL_Texture* fontTex = this->load(fontPath);
+	if (!fontTex)
+	{
+		return;
+	}
+	SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 0);
+	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_NONE);
+	while (i < sizeof(charset) / sizeof(char))
+	{
+		SDL_Texture* charTex = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, characterW, characterH);
+		SDL_SetRenderTarget(this->renderer, charTex);
+		SDL_RenderFillRect(this->renderer, NULL);
+		SDL_RenderCopy(this->renderer, fontTex, &clip, NULL);
+		this->charMap[charset[i]] = charTex;
+		clip.x += clip.w;
+		i++;
+	}
+	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderTarget(this->renderer, this->target);
+}
+
+vbl::SpriteTexture vbl::Renderer::renderText(const std::string& str)
+{
+	SDL_Texture* text = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, str.size() * 5 + std::max((int)str.size() - 1, 0) + 1, 7);
+	SDL_SetRenderTarget(this->renderer, text);
+	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_NONE);
+	SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 0);
+	SDL_RenderFillRect(this->renderer, NULL);
+	SDL_SetTextureBlendMode(text, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_BLEND);
+	SDL_Rect at = { 0, 0, 5, 7 };
+	for (const auto c : str)
+	{
+		SDL_RenderCopy(this->renderer, this->charMap[c], NULL, &at);
+		at.x += at.w + 1;
+	}
+	SDL_SetRenderTarget(this->renderer, this->target);
+	return SpriteTexture(text, { 0,0, int(float(at.x) / this->renderScale), int(float(at.h) / this->renderScale) }, 0);
+}
+
+vbl::SpriteTexture vbl::Renderer::renderTextIrresponsible(const std::string& str)
+{
+	SpriteTexture text = renderText(str);
+	text.responsible = false;
+	return text;
 }

@@ -113,4 +113,13 @@ namespace maf
 	{
 		return (std::atan2(to.y - from.y, to.x - from.x) + 1.57079632679);
 	}
+
+	inline fvec2 setMiddle(maf::fvec2 pos, maf::fvec2 dim)
+	{
+		return
+		{
+			pos.x - dim.x / 2,
+			pos.y - dim.y / 2
+		};
+	}
 }

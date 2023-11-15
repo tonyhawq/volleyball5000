@@ -1,5 +1,11 @@
 #include "Geometry.h"
 
+void vbl::Geometry::empty()
+{
+	this->boxes.clear();
+	this->rects.clear();
+}
+
 vbl::Geometry::Geometry(MAABB box)
 {
 	this->boxes.reserve(box.getBoxes().capacity());

@@ -5,8 +5,10 @@
 #include <functional>
 
 #include "vbl.h"
-#include "Sprite.h"
+#include "Ball.h"
+#include "GameSprite.h"
 #include "Geometry.h"
+#include "Particles.h"
 
 namespace vbl
 {
@@ -59,29 +61,49 @@ namespace vbl
 		uint32_t jumpQueuedown;
 	};
 
-	class Guy : public Sprite
+	class Guy : public GameSprite
 	{
 	public:
+		struct Powerup
+		{
+			Ball::PowerupType type;
+			float remaining;
+		};
+
 		Guy(const std::string& name, float diameter, SDL_Texture* texture, Controller* controller = NULL);
 
 		void link(Controller* controller);
 
 		bool collidesWithGeometryBox(const GeometryBox* box);
 		void moveWithCollision(const Geometry& geometry);
-		void update(const Geometry& geometry);
+		void update(const Geometry& geometry, uint16_t tick);
+		void updatePowerups();
+		void clearPowerups();
+
+		void applyPower(Ball::PowerupType type);
+		void removePower(Ball::PowerupType type);
 
 		void jump();
 		inline bool canJump() const { return (jumps < maxJumps); };
 		void dash();
 		inline bool canDash() const { return (dashes < maxDashes); };
 		inline void setGravity(float grav) { this->gravity = grav; }
+
+		inline const std::vector<Powerup>& getPowers() const { return this->powers; }
 		
 		void touchedGround(maf::fvec2 pos);
 		void reset();
 
+		void powerup(Ball::PowerupType powerup, float duration);
+
 		static MAABB makeCircle(float diameter);
 		inline const Controller* getController() const { return this->controller; }
+		inline Controller* changeController() { return this->controller; }
+
 	private:
+
+		std::vector<Powerup> powers;
+
 		Controller* controller = NULL;
 
 		std::string name;

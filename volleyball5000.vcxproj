@@ -113,6 +113,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,25 +141,38 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Except\Except.cpp" />
+    <ClCompile Include="Game\Except\MapLoading.cpp" />
+    <ClCompile Include="Game\GameSprite.cpp" />
     <ClCompile Include="Game\Ball.cpp" />
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\Guy.cpp" />
     <ClCompile Include="Game\Geometry.cpp" />
     <ClCompile Include="Game\Renderer.cpp" />
     <ClCompile Include="Game\Particles.cpp" />
+    <ClCompile Include="Game\Sounds.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Game\Sprite.cpp" />
+    <ClCompile Include="Game\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Except\Except.h" />
+    <ClInclude Include="Game\Except\MapLoading.h" />
+    <ClInclude Include="Game\GameSprite.h" />
     <ClInclude Include="Game\Ball.h" />
     <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Game\Guy.h" />
+    <ClInclude Include="Game\loadutils.h" />
     <ClInclude Include="Game\maf.h" />
+    <ClInclude Include="Game\random.h" />
+    <ClInclude Include="Game\strhelp.h" />
     <ClInclude Include="Game\vbl.h" />
     <ClInclude Include="Game\Sprite.h" />
     <ClInclude Include="Game\Geometry.h" />
     <ClInclude Include="Game\Renderer.h" />
     <ClInclude Include="Game\Particles.h" />
+    <ClInclude Include="Game\Sounds.h" />
+    <ClInclude Include="Game\Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
