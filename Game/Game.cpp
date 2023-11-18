@@ -171,7 +171,7 @@ void vbl::Map::load(const std::string& path)
 			}
 			if (this->spawnpoints.size() <= team)
 			{
-				this->spawnpoints.resize((size_t)team + 1);
+				this->spawnpoints.resize((size_t)team + 1, {0});
 			}
 			this->spawnpoints[team] = pos;
 		}
@@ -349,12 +349,13 @@ int vbl::Game::makeGuy(const std::string& name, const std::string& picture, maf:
 
 std::shared_ptr<vbl::Ball> vbl::Game::makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture)
 {
-	map.ballSpawnPoint = pos;
 	std::shared_ptr<vbl::Ball> ball = map.addBall(picture, glowPicture);
 	ball->setParticle("cld", "ball_particle");
 	ball->setParticle("bnk", "boink");
 	ball->setSound("boink", this->sound.getID("boink"));
-	this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, "ball_glow", {0, 0, 256, 256}, 0, 0);
+	Particle& particle = this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), { 256,256 }), { 0,0 }, "glow", { 0, 0, 256, 256 }, 0, 0);
+	particle.changeTexture().usesSpecialBlendmode = true;
+	particle.changeTexture().specialBlendingMode = SDL_BLENDMODE_ADD;
 	return ball;
 }
 
@@ -755,7 +756,7 @@ void vbl::Game::renderParticles()
 	const std::list<Particle>& particles = this->particleManager.getParticles();
 	for (const auto& p : particles)
 	{
-		this->renderer.renderSpriteConst(p.getTexture());
+		this->renderer.renderSpriteConst(p.getTexture(), p.getAlpha());
 	}
 }
 

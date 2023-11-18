@@ -125,14 +125,23 @@ void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha
 		clipping.w = animClippingRect.w;
 		clipping.h = animClippingRect.h;
 	}
+	SDL_Texture* atlasTexture = this->atlas.getTexture(this->renderer);
 	if (alpha != 255)
 	{
-		SDL_SetTextureAlphaMod(this->atlas.getTexture(NULL), alpha);
+		SDL_SetTextureAlphaMod(atlasTexture, alpha);
 	}
-	SDL_RenderCopyEx(this->renderer, atlas.getTexture(this->renderer), &clipping, &scaled, sprite.getRotation(), NULL, SDL_FLIP_NONE);
+	if (sprite.usesSpecialBlendmode)
+	{
+		SDL_SetTextureBlendMode(atlasTexture, sprite.specialBlendingMode);
+	}
+	SDL_RenderCopyEx(this->renderer, atlasTexture, &clipping, &scaled, sprite.getRotation(), NULL, SDL_FLIP_NONE);
 	if (alpha != 255)
 	{
-		SDL_SetTextureAlphaMod(this->atlas.getTexture(NULL), 255);
+		SDL_SetTextureAlphaMod(atlasTexture, 255);
+	}
+	if (sprite.usesSpecialBlendmode)
+	{
+		SDL_SetTextureBlendMode(atlasTexture, SDL_BLENDMODE_BLEND);
 	}
 }
 

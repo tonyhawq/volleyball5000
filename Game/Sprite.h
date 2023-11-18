@@ -66,6 +66,8 @@ namespace vbl
 		inline SDL_Rect getClippingRect() const { return {this->spriteDimensions.x * this->animState, 0, this->spriteDimensions.x, spriteDimensions.y}; }
 	
 		size_t cachedID = INVALID_CACHED;
+		bool usesSpecialBlendmode = false;
+		SDL_BlendMode specialBlendingMode = SDL_BLENDMODE_BLEND;
 	private:
 		bool animated = false;
 		maf::ivec2 spriteDimensions;

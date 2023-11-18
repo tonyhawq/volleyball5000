@@ -28,9 +28,10 @@ void vbl::Particle::update()
 }
 
 
-void vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed)
+vbl::Particle& vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed)
 {
 	particles.push_front(Particle(lifespan, pos, vel, picture, box, rotation, rotationSpeed));
+	return particles.front();
 }
 
 void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
