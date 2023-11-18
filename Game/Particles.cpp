@@ -4,11 +4,10 @@
 
 #include "random.h"
 
-vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, SDL_Texture* texture, SDL_Rect box, float rotation, float rotationSpeed)
-	:lifespan(lifespan), pos(pos), vel(vel), texture(texture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan)
+vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture , SDL_Rect box, float rotation, float rotationSpeed)
+	:lifespan(lifespan), pos(pos), vel(vel), texture(picture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan)
 {
 	this->texture.setPos(this->pos);
-	this->texture.responsible = false;
 }
 
 void vbl::Particle::update()
@@ -20,7 +19,6 @@ void vbl::Particle::update()
 	if (this->fade)
 	{
 		this->alpha = (float)this->lifespan / (float)this->maxLifespan * 255;
-		SDL_SetTextureAlphaMod(this->texture.getTexture(), this->alpha);
 	}
 	this->texture.rotate(this->rotationSpeed);
 	this->pos = this->pos + this->vel;
@@ -30,12 +28,12 @@ void vbl::Particle::update()
 }
 
 
-void vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, SDL_Texture* texture, SDL_Rect box, float rotation, float rotationSpeed)
+void vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed)
 {
-	particles.push_front(Particle(lifespan, pos, vel, texture, box, rotation, rotationSpeed));
+	particles.push_front(Particle(lifespan, pos, vel, picture, box, rotation, rotationSpeed));
 }
 
-void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, SDL_Texture* texture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
+void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
 {
 	for (uint32_t i = 0; i < variations; i++)
 	{
@@ -43,7 +41,7 @@ void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf:
 			lifespan + maf::random(-varDist, varDist),
 			{ pos.x + maf::random(-varDist, varDist), pos.y + maf::random(-varDist, varDist) },
 			{ vel.x + maf::random(-varDist, varDist), vel.y + maf::random(-varDist, varDist) },
-			texture,
+			picture,
 			box,
 			rotation + maf::random(-varDist, varDist),
 			rotationSpeed + maf::random(-varDist, varDist)
@@ -67,7 +65,7 @@ void vbl::ParticleManager::process()
 			eraseLast = false;
 		}
 		iter->update();
-		if (!iter->lifespan || !iter->getTexture().getTexture())
+		if (!iter->lifespan)
 		{
 			eraseLast = true;
 		}

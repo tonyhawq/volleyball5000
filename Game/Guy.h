@@ -70,7 +70,7 @@ namespace vbl
 			float remaining;
 		};
 
-		Guy(const std::string& name, float diameter, SDL_Texture* texture, Controller* controller = NULL);
+		Guy(const std::string& name, float diameter, const std::string& picture, Controller* controller = NULL);
 
 		void link(Controller* controller);
 

@@ -90,8 +90,8 @@ vbl::MAABB vbl::Guy::makeCircle(float diameter)
 		});
 }
 
-vbl::Guy::Guy(const std::string& name, float diameter, SDL_Texture* texture, Controller* controller)
-	: GameSprite({ diameter, diameter }, texture)
+vbl::Guy::Guy(const std::string& name, float diameter, const std::string& picture, Controller* controller)
+	: GameSprite({ diameter, diameter }, picture)
 {
 	this->name = name;
 	if (controller)
@@ -121,7 +121,7 @@ void vbl::Guy::jump()
 				120,
 				{ (float)this->texture.getMiddle().x, (float)this->texture.getMiddle().y },
 				{ 0,0 },
-				this->getParticle("air"),
+				*this->getParticle("air"),
 				{ 0,0,24,24 },
 				0,
 				0,
@@ -296,7 +296,7 @@ void vbl::Guy::update(const Geometry& geometry, uint16_t tick)
 					120,
 					{ (float)this->getTexture().feet().x, (float)this->getTexture().feet().y },
 					{ 0,0 },
-					this->getParticle("grd"),
+					*this->getParticle("grd"),
 					{ 0,0,16,16 },
 					0,
 					0,
@@ -319,7 +319,7 @@ void vbl::Guy::update(const Geometry& geometry, uint16_t tick)
 			120,
 			{ (float)this->texture.getMiddle().x, (float)this->texture.getMiddle().y },
 			{ 0,0 },
-			this->getParticle("air"),
+			*this->getParticle("air"),
 			{ 0,0,24,24 },
 			0,
 			0,

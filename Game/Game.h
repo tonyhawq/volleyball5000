@@ -38,10 +38,10 @@ namespace vbl
 		void setSpawnPoint(uint16_t team, maf::fvec2 where);
 		maf::fvec2 getSpawnPoint(uint16_t team);
 
-		int addGuy(const std::string& name, SDL_Texture* tex, maf::ivec2 spriteDim);
+		int addGuy(const std::string& name, const std::string& picture, maf::ivec2 spriteDim);
 		std::shared_ptr<vbl::Guy> getGuy(const std::string& name);
 
-		std::shared_ptr<vbl::Ball> addBall(SDL_Texture* tex, SDL_Texture* glowTex);
+		std::shared_ptr<vbl::Ball> addBall(const std::string& picture, const std::string& glowPicture);
 		void removeBall(int* i);
 
 		void respawnGuy(std::shared_ptr<vbl::Guy> guy, uint16_t team);
@@ -99,9 +99,9 @@ namespace vbl
 		inline bool running() const { return this->isRunning; }
 
 		int makeController(const std::string& name, uint16_t team);
-		int makeGuy(const std::string& name, const std::string& path, maf::ivec2 spriteDim);
-		std::shared_ptr<vbl::Ball> makeBall(maf::fvec2 pos, const std::string& path, const std::string& glowPath);
-		std::shared_ptr<vbl::Ball> makePowerupBall(const std::string& path, const std::string& glowPath, Ball::PowerupType power);
+		int makeGuy(const std::string& name, const std::string& picture, maf::ivec2 spriteDim);
+		std::shared_ptr<vbl::Ball> makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture);
+		std::shared_ptr<vbl::Ball> makePowerupBall(const std::string& picture, const std::string& glowPicture, Ball::PowerupType power);
 
 		void applyTeamPowerup(uint16_t team, Ball::PowerupType power, float length, bool onGuy = true);
 		void spawnRandomPowerup();
@@ -112,9 +112,9 @@ namespace vbl
 		void cameraShake(float length, float amplitude);
 
 		void respawnGuys();
-		void setWaitingScreen(uint16_t team, SDL_Rect box, const std::string& path);
+		void setWaitingScreen(uint16_t team, SDL_Rect box, const std::string& name);
 
-		void loadEffectSprite(Ball::PowerupType effect, const std::string& path);
+		void loadEffectSprite(Ball::PowerupType effect, const std::string& picture);
 		
 		int linkController(const std::string& controllerName, const std::string& guyName);
 		void unlink(const std::string& guyName);
@@ -135,6 +135,7 @@ namespace vbl
 			STATE_SCORED,
 		};
 	//private:
+		SpriteTexture traceEndTexture;
 		GameState state = GameState::STATE_WAITING_FOR_INPUT;
 		Renderer renderer;
 		Map map;
@@ -144,16 +145,12 @@ namespace vbl
 		std::unordered_map<uint16_t, TeamData> teamData;
 		SDL_Color bg = { 110, 190, 255, 255 };
 		uint32_t tick = 0;
-		std::vector<SDL_Texture*> effectSpritesByType;
+		std::vector<std::string> effectSpritesByType;
 		maf::ivec2 effectSpriteDim = { 32, 32 };
-		SDL_Texture* traceEndTexture = NULL;
-		SDL_Texture* ballExplosionTex = NULL;
 		ParticleManager particleManager;
 		uint32_t scoredCooldown = 0;
-		SDL_Texture* glowTexture = NULL;
 		Sounds sound;
 		std::vector<SpriteTexture> textToRender;
-		SDL_Texture* offscreenArrow = NULL;
 		float updateTime = 0;
 		float renderTime = 0;
 		float frameTime = 0;

@@ -5,8 +5,10 @@
 #include <iostream>
 #include <filesystem>
 
-vbl::Renderer::Renderer(uint32_t width, uint32_t height, float renderScale)
-	:renderer(NULL), window(NULL), target(NULL), renderScale(renderScale)
+#include "Debug/logtools.h"
+
+vbl::Renderer::Renderer(uint32_t width, uint32_t height, uint32_t atlasWidth, uint32_t atlasHeight, float renderScale)
+	:renderer(NULL), window(NULL), target(NULL), renderScale(renderScale), atlas(atlasWidth, atlasHeight)
 {
 	SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_RESIZABLE, &window, &renderer);
 	if (!window)
@@ -91,39 +93,56 @@ void vbl::Renderer::clearFrame(SDL_Color clr)
 
 void vbl::Renderer::presentFrame()
 {
-	if (SDL_SetRenderTarget(this->renderer, NULL)) { printf("%s\n", SDL_GetError()); }
-	if (SDL_RenderCopy(this->renderer, this->target, NULL, NULL)) { printf("%s\n", SDL_GetError()); }
+	if (SDL_SetRenderTarget(this->renderer, NULL)) { DEBUG_LOG(std::format("Setting render target failed, {}", SDL_GetError())); }
+	if (SDL_RenderCopy(this->renderer, this->target, NULL, NULL)) { DEBUG_LOG(std::format("Copying from low-res target failed, {}", SDL_GetError())); }
 	SDL_RenderPresent(this->renderer);
-	if (SDL_SetRenderTarget(this->renderer, this->target)) { printf("%s\n", SDL_GetError()); }
+	if (SDL_SetRenderTarget(this->renderer, this->target)) { DEBUG_LOG("Setting render target to low-res failed, {}", SDL_GetError()); }
 }
 
-void vbl::Renderer::renderSprite(const SpriteTexture& sprite, uint8_t alpha)
+void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha)
 {
-	SDL_SetTextureAlphaMod(sprite.getTexture(), alpha);
-	renderSprite(sprite);
-	SDL_SetTextureAlphaMod(sprite.getTexture(), 255);
-}
-
-void vbl::Renderer::renderSprite(const SpriteTexture& sprite)
-{
-	SDL_SetRenderDrawColor(this->renderer, 255, 255, 0, 255);
+	SDL_Rect clipping{};
+	if (sprite.cachedID == SpriteTexture::INVALID_CACHED)
+	{
+		clipping = this->atlas.get(sprite.getPicture());
+	}
+	else
+	{
+		clipping = this->atlas.get(sprite.cachedID);
+	}
+	if (clipping.w == 0 || clipping.h == 0)
+	{
+		DEBUG_LOG_F("Rendering sprite texture with picture {} failed. Atlas likely does not have {} registered.", sprite.getPicture(), sprite.getPicture());
+	}
+	DEBUG_LOG_F("{}, {} {}x{}", clipping.x, clipping.y, clipping.w, clipping.h);
 	SDL_Rect scaled = *sprite.getRect();
 	mapRect(&scaled);
-	//SDL_RenderDrawRect(this->renderer, &scaled);
-	SDL_Rect* clipping = NULL;
-	SDL_Rect animClippingRect = sprite.getClippingRect();
 	if (sprite.isAnimated())
 	{
-		clipping = &animClippingRect;
+		SDL_Rect animClippingRect = sprite.getClippingRect();
+		clipping.x += animClippingRect.x;
+		clipping.y += animClippingRect.y;
+		clipping.w = animClippingRect.w;
+		clipping.h = animClippingRect.h;
 	}
-	SDL_RenderCopyEx(this->renderer, sprite.getTexture(), clipping, &scaled, sprite.getRotation(), NULL, SDL_FLIP_NONE);
-	/*maf::ivec2 middle = sprite.getMiddle();
-	SDL_RenderDrawLine(
-		this->renderer,
-		int(middle.x * renderScale),
-		int(middle.y * renderScale),
-		int((middle.x + int(std::sin(maf::degreesToRad(sprite.getRotation())) * 100.0f)) * renderScale),
-		int((middle.y + int(std::cos(maf::degreesToRad(sprite.getRotation())) * 100.0f)) * renderScale));*/
+	if (alpha != 255)
+	{
+		SDL_SetTextureAlphaMod(this->atlas.getTexture(NULL), alpha);
+	}
+	SDL_RenderCopyEx(this->renderer, atlas.getTexture(this->renderer), &clipping, &scaled, sprite.getRotation(), NULL, SDL_FLIP_NONE);
+	if (alpha != 255)
+	{
+		SDL_SetTextureAlphaMod(this->atlas.getTexture(NULL), 255);
+	}
+}
+
+void vbl::Renderer::renderSprite(SpriteTexture& sprite, uint8_t alpha)
+{
+	if (sprite.cachedID == SpriteTexture::INVALID_CACHED)
+	{
+		this->atlas.get(sprite.getPicture(), sprite.cachedID);
+	}
+	renderSpriteConst(sprite, alpha);
 }
 
 void vbl::Renderer::renderBoundingBox(const MAABB& box, SDL_Color clr)
@@ -133,7 +152,7 @@ void vbl::Renderer::renderBoundingBox(const MAABB& box, SDL_Color clr)
 	{
 		SDL_FRect frect = { rect.x, rect.y, rect.w, rect.h };
 		mapRect(&frect);
-		if (SDL_RenderDrawRectF(this->renderer, &frect)) { printf("%s\n", SDL_GetError()); }
+		SDL_RenderDrawRectF(this->renderer, &frect);
 	}
 }
 
@@ -186,7 +205,7 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry, bool debug)
 	}
 }
 
-void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points, SDL_Texture* endTex)
+void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points, SpriteTexture& endTex)
 {
 	if (points.size() < 2)
 	{
@@ -199,9 +218,8 @@ void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points, SDL_Textu
 		SDL_RenderDrawLine(this->renderer, int(lastPoint.x * renderScale), int(lastPoint.y * renderScale), int(points[i].x * renderScale), int(points[i].y * renderScale));
 		lastPoint = points[i];
 	}
-	const int diam = 44;
-	SDL_Rect end = { (lastPoint.x - diam / 2) * renderScale, (lastPoint.y - diam / 2) * renderScale, diam * renderScale, diam * renderScale };
-	SDL_RenderCopy(this->renderer, endTex, NULL, &end);
+	endTex.setMiddle({ lastPoint.x, lastPoint.y });
+	renderSprite(endTex);
 }
 
 SDL_Texture* vbl::Renderer::load(const std::string& path, bool ignoreMissing)
@@ -209,7 +227,7 @@ SDL_Texture* vbl::Renderer::load(const std::string& path, bool ignoreMissing)
 	SDL_Surface* surf = IMG_Load(path.c_str());
 	if (!surf)
 	{
-		printf("%s\n", IMG_GetError());
+		DEBUG_LOG(std::format("Loading {} as surface failed, {}", path, SDL_GetError()));
 		if (!ignoreMissing)
 		{
 			surf = IMG_Load(this->missingTex.c_str());
@@ -218,7 +236,7 @@ SDL_Texture* vbl::Renderer::load(const std::string& path, bool ignoreMissing)
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surf);
 	if (!texture)
 	{
-		printf("%s\n", SDL_GetError());
+		DEBUG_LOG(std::format("Loading {} into a texture failed, {}", path, SDL_GetError()));
 	}
 	SDL_FreeSurface(surf);
 	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
@@ -277,12 +295,11 @@ vbl::SpriteTexture vbl::Renderer::renderText(const std::string& str)
 		at.x += at.w + 1;
 	}
 	SDL_SetRenderTarget(this->renderer, this->target);
-	return SpriteTexture(text, { 0,0, int(float(at.x) / this->renderScale), int(float(at.h) / this->renderScale) }, 0);
+	SDL_DestroyTexture(text);
+	return SpriteTexture();
 }
 
 vbl::SpriteTexture vbl::Renderer::renderTextIrresponsible(const std::string& str)
 {
-	SpriteTexture text = renderText(str);
-	text.responsible = false;
-	return text;
+	return SpriteTexture();
 }

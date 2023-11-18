@@ -8,6 +8,8 @@
 #include "strhelp.h"
 #include "loadutils.h"
 
+#include "Debug/logtools.h"
+
 void vbl::Map::load(const std::string& path)
 {
 	this->gravity = 0;
@@ -25,7 +27,8 @@ void vbl::Map::load(const std::string& path)
 	size_t index = 0;
 	size_t found = 0;
 	strhelp::findAndRemove(file, '\n');
-	printf("file is\n%s\n", file.c_str());
+	LOG(std::format("loading map {}", path));
+	DEBUG_LOG(std::format("formatted map is:\n {}", file));
 	FileLoadingMode mode = FileLoadingMode::NONE;
 	bool isModeLine = false;
 	while (true)
@@ -37,11 +40,11 @@ void vbl::Map::load(const std::string& path)
 			break;
 		}
 		std::string loaded = file.substr(index, found - index);
-		if (loaded == "gravity") { mode = FileLoadingMode::GRAVITY; isModeLine = true; printf("begin loading gravity\n"); }
-		else if (loaded == "boxes") { mode = FileLoadingMode::BOXES; isModeLine = true; printf("begin loading boxes\n"); }
-		else if (loaded == "colors") { mode = FileLoadingMode::COLORS; isModeLine = true; printf("begin loading colors\n"); }
-		else if (loaded == "spawnpoints") { mode = FileLoadingMode::SPAWNPOINTS; isModeLine = true; printf("begin loading spawnpoints\n"); }
-		else if (loaded == "spawnvel") { mode = FileLoadingMode::SPAWNVEL; isModeLine = true; printf("begin loading spawnvels\n"); }
+		if (loaded == "gravity") { mode = FileLoadingMode::GRAVITY; isModeLine = true; DEBUG_LOG("MAPLOADING: loading gravity"); }
+		else if (loaded == "boxes") { mode = FileLoadingMode::BOXES; isModeLine = true; DEBUG_LOG("MAPLOADING: loading boxes"); }
+		else if (loaded == "colors") { mode = FileLoadingMode::COLORS; isModeLine = true; DEBUG_LOG("MAPLOADING: loading colors"); }
+		else if (loaded == "spawnpoints") { mode = FileLoadingMode::SPAWNPOINTS; isModeLine = true; DEBUG_LOG("MAPLOADING: loading spawnpoints"); }
+		else if (loaded == "spawnvel") { mode = FileLoadingMode::SPAWNVEL; isModeLine = true; DEBUG_LOG("MAPLOADING: loading spawnvels"); }
 		if (isModeLine)
 		{
 			index = found + 1;
@@ -51,7 +54,6 @@ void vbl::Map::load(const std::string& path)
 		{
 		case FileLoadingMode::GRAVITY:
 		{
-			printf("loading gravity\n");
 			size_t inIndex = 0;
 			size_t inFound = 0;
 			bool run = true;
@@ -74,7 +76,6 @@ void vbl::Map::load(const std::string& path)
 			break;
 		case FileLoadingMode::BOXES:
 		{
-			printf("loading bounding boxes\n");
 			size_t inIndex = 0;
 			size_t inFound = 0;
 			maf::frect rect{};
@@ -121,7 +122,6 @@ void vbl::Map::load(const std::string& path)
 			break;
 		case FileLoadingMode::COLORS:
 		{
-			printf("loading colored rects\n");
 			size_t inIndex = 0;
 			maf::frect rect{};
 			SDL_Color clr{};
@@ -205,13 +205,10 @@ void vbl::Map::clearBalls()
 }
 
 vbl::Game::Game(uint32_t width, uint32_t height, float scale)
-	:renderer(width, height, scale), sound(10), nextPowerupTick(0)
+	:renderer(width, height, 2048, 2048, scale), sound(10), nextPowerupTick(0)
 {
 	this->renderer.setMissingTexture("missing.png");
-	this->traceEndTexture  = this->renderer.load("content/graphics/trace_end.png");
-	this->ballExplosionTex = this->renderer.load("content/graphics/flash.png");
-	this->glowTexture      = this->renderer.load("content/graphics/glow.png");
-	this->offscreenArrow = this->renderer.load("content/graphics/offscreen_arrow.png");
+	this->traceEndTexture = SpriteTexture("trace_end", { 0,0,44,44 }, 0);
 }
 
 bool vbl::Map::collides(const MAABB& box) const
@@ -219,16 +216,16 @@ bool vbl::Map::collides(const MAABB& box) const
 	return geometry.collides(box);
 }
 
-int vbl::Map::addGuy(const std::string& name, SDL_Texture* tex, maf::ivec2 spriteDim)
+int vbl::Map::addGuy(const std::string& name, const std::string& picture, maf::ivec2 spriteDim)
 {
 	if (guyMap.count(name))
 	{
 		return 1;
 	}
 	guyMap[name] = guys.size();
-	guys.push_back(std::make_shared<Guy>(name, 80, tex));
+	guys.push_back(std::make_shared<Guy>(name, 80, picture));
 	std::shared_ptr<Guy> guy = guys[guys.size() - 1];
-	guy->changeTexture().setTexture(tex);
+	guy->changeTexture().setPicture(picture);
 	guy->changeTexture().setSpriteWidth(spriteDim.x);
 	guy->changeTexture().setSpriteHeight(spriteDim.y);
 	actors.push_back(guy);
@@ -244,9 +241,9 @@ std::shared_ptr<vbl::Guy> vbl::Map::getGuy(const std::string& name)
 	return guys[guyMap[name]];
 }
 
-std::shared_ptr<vbl::Ball> vbl::Map::addBall(SDL_Texture* tex, SDL_Texture* glowTex)
+std::shared_ptr<vbl::Ball> vbl::Map::addBall(const std::string& picture, const std::string& glowPicture)
 {
-	balls.push_back(std::make_shared<Ball>(tex, glowTex, 80));
+	balls.push_back(std::make_shared<Ball>(picture, glowPicture, 80));
 	std::shared_ptr<Ball> ball = balls[balls.size() - 1];
 	ball->reset(this->ballSpawnCooldown);
 	ball->setPos(this->ballSpawnPoint);
@@ -337,27 +334,27 @@ int vbl::Game::makeController(const std::string& name, uint16_t team)
 	return 0;
 }
 
-int vbl::Game::makeGuy(const std::string& name, const std::string& path, maf::ivec2 spriteDim)
+int vbl::Game::makeGuy(const std::string& name, const std::string& picture, maf::ivec2 spriteDim)
 {
-	int result = map.addGuy(name, this->renderer.load(path), spriteDim);
+	int result = map.addGuy(name, picture, spriteDim);
 	if (!result)
 	{
 		std::shared_ptr<vbl::Guy> guy = map.getGuy(name);
-		guy->setParticle("grd", this->renderer.load("content/graphics/ground_particle.png"));
-		guy->setParticle("air", this->renderer.load("content/graphics/air_particle.png"));
 		guy->changeTexture().setAnimated(true);
+		guy->setParticle("grd", "ground_particle");
+		guy->setParticle("air", "air_particle");
 	}
 	return result;
 }
 
-std::shared_ptr<vbl::Ball> vbl::Game::makeBall(maf::fvec2 pos, const std::string& path, const std::string& glowPath)
+std::shared_ptr<vbl::Ball> vbl::Game::makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture)
 {
 	map.ballSpawnPoint = pos;
-	std::shared_ptr<vbl::Ball> ball = map.addBall(this->renderer.load(path), this->renderer.load(glowPath));
-	ball->setParticle("cld", this->renderer.load("content/graphics/ball_particle.png"));
-	ball->setParticle("bnk", this->renderer.load("content/graphics/boink.png"));
+	std::shared_ptr<vbl::Ball> ball = map.addBall(picture, glowPicture);
+	ball->setParticle("cld", "ball_particle");
+	ball->setParticle("bnk", "boink");
 	ball->setSound("boink", this->sound.getID("boink"));
-	this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, this->glowTexture, {0, 0, 256, 256}, 0, 0);
+	this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, "ball_glow", {0, 0, 256, 256}, 0, 0);
 	return ball;
 }
 
@@ -446,7 +443,7 @@ void vbl::Game::applyTeamPowerup(uint16_t team, Ball::PowerupType power, float l
 		}
 		dteam->teamPowerups[power];
 		dteam->teamPowerups[power]++;
-		printf("team %u has powerup %i %i times\n", team, (int)power, dteam->teamPowerups[power]);
+		DEBUG_LOG(std::format("Team {} has powerup {} and has it {} times.", team, (int)power, dteam->teamPowerups[power]));
 	}
 	for (auto& guy : this->map.guys)
 	{
@@ -463,10 +460,14 @@ void vbl::Game::applyTeamPowerup(uint16_t team, Ball::PowerupType power, float l
 
 void vbl::Game::run()
 {
+	LOG("-------------------------------");
+	LOG_F("{} BEGAN GAME LOOP", (void*)this);
+	LOG("-------------------------------");
 	this->isRunning = true;
 	while (this->isRunning)
 	{
 		timer.set();
+		FLUSH_LOG();
 		this->update();
 		this->updateTime = timer.time();
 		this->render();
@@ -544,7 +545,10 @@ void vbl::Game::updateWaiting()
 	{
 		if (c->ready())
 		{
-			printf("controller %s ready\n", c->getName().c_str());
+			if (!this->teamData[c->getTeam()].ready)
+			{
+				DEBUG_LOG(std::format("Controller {} of team {} readied up", c->getName(), c->getTeam()));
+			}
 			this->teamData[c->getTeam()].ready = true;
 		}
 	}
@@ -554,7 +558,6 @@ void vbl::Game::updateWaiting()
 		{
 			return;
 		}
-		printf("team %u ready\n", teamState.first);
 	}
 	this->selectNextPowerupTick();
 	this->state = GameState::STATE_RUNNING;
@@ -577,7 +580,6 @@ void vbl::Game::updateGame()
 		guy->update(this->map.getGeometry(), this->tick);
 		this->particleManager.addParticles(guy->getParticles());
 		this->sound.takeSounds(guy->getSounds());
-		printf("%f\n", guy->getPos().y);
 	}
 	for (int i = 0; i < this->map.balls.size(); i++)
 	{
@@ -592,8 +594,8 @@ void vbl::Game::updateGame()
 		}
 		if (ball->triggered())
 		{
-			this->particleManager.spewParticles(120, ball->getVisMid(), { 0,0 }, ball->getParticle("cld"), {0,0,24,24}, 0, 0, 50, 10);
-			this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, this->glowTexture, {0, 0, 256, 256}, 0, 0);
+			this->particleManager.spewParticles(120, ball->getVisMid(), { 0,0 }, *ball->getParticle("cld"), {0,0,24,24}, 0, 0, 50, 10);
+			this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, "ball_glow", {0, 0, 256, 256}, 0, 0);
 			this->cameraShake(10, 5);
 			if (Ball::PowerupType power = ball->isPowerup())
 			{
@@ -607,7 +609,6 @@ void vbl::Game::updateGame()
 				continue;
 			}
 			int scoreMultiplier = this->teamData[ball->team()].teamPowerups[Ball::POWERUP_DOUBLEPOINTS];
-			printf("score multiplier is %i\n", scoreMultiplier);
 			if (scoreMultiplier)
 			{
 				score(ball->team(), scoreMultiplier);
@@ -639,11 +640,11 @@ void vbl::Game::spawnRandomPowerup()
 	{
 	case 0:
 		//triplejump
-		makePowerupBall("content/graphics/triplejump.png", "content/graphics/ball_glow.png", Ball::POWERUP_TRIPLEJUMP);
+		makePowerupBall("triplejump", "ball_glow", Ball::POWERUP_TRIPLEJUMP);
 		break;
 	case 1:
 		//double points
-		makePowerupBall("content/graphics/doublepoints.png", "content/graphics/ball_glow.png", Ball::POWERUP_DOUBLEPOINTS);
+		makePowerupBall("doublepoints", "ball_glow", Ball::POWERUP_DOUBLEPOINTS);
 		break;
 	}
 }
@@ -704,21 +705,23 @@ void vbl::Game::render()
 	renderParticles();
 	for (const auto& guy : this->map.guys)
 	{
-		this->renderer.renderSprite(guy->getTexture());
+		this->renderer.renderSpriteConst(guy->getTexture());
 		//this->renderer.renderBoundingBox(guy->getBox());
 		renderStatusEffects({guy->getPos().x - 4, guy->getPos().y - 4}, guy->getPowers());
 	}
 	for (const auto& ball : this->map.balls)
 	{
-		this->renderer.renderSprite(ball->getTexture());
+		this->renderer.renderSpriteConst(ball->getTexture());
 		if (ball->getGlow())
 		{
-			this->renderer.renderSprite(SpriteTexture(ball->getGlowTex(), *ball->getTexture().getRect(), 0.0f, false), ball->getGlow());
+			SpriteTexture tex(ball->getGlowTex(), *ball->getTexture().getRect(), 0.0f);
+			this->renderer.renderSprite(tex, ball->getGlow());
 		}
 		if (ball->getVisMid().y < 0)
 		{
 			SDL_Rect ballRect = *ball->getTexture().getRect();
-			this->renderer.renderSprite(SpriteTexture(this->offscreenArrow, { int(ball->getPos().x), 0, ballRect.w, ballRect.h }, 0, false));
+			SpriteTexture tex("offscreen_arrow", { int(ball->getPos().x), 0, ballRect.w, ballRect.h }, 0);
+			this->renderer.renderSprite(tex);
 		}
 		//this->renderer.renderBoundingBox(ball->getBox());
 		if (this->state == GameState::STATE_WAITING_FOR_INPUT)
@@ -735,7 +738,7 @@ void vbl::Game::render()
 			{
 				continue;
 			}
-			this->renderer.renderSprite(teamState.second.waitingSprite, 64);
+			this->renderer.renderSpriteConst(teamState.second.waitingSprite, 64);
 		}
 	}
 	this->renderText();
@@ -752,7 +755,7 @@ void vbl::Game::renderParticles()
 	const std::list<Particle>& particles = this->particleManager.getParticles();
 	for (const auto& p : particles)
 	{
-		this->renderer.renderSprite(p.getTexture(), p.getAlpha());
+		this->renderer.renderSpriteConst(p.getTexture());
 	}
 }
 
@@ -791,29 +794,26 @@ void vbl::Game::renderStatusEffects(maf::fvec2 pos, const std::vector<Guy::Power
 
 void vbl::Game::renderEffectSprite(maf::fvec2 pos, int type)
 {
-	SDL_Texture* toUse = this->renderer.load("MSSNG");
+	std::string toUse = "NO_ASSIGN";
 	if (type < this->effectSpritesByType.size())
 	{
 		toUse = this->effectSpritesByType[type];
 	}
-	this->renderer.renderSprite(SpriteTexture(
+	SpriteTexture tex(
 		toUse,
 		{ (int)pos.x, (int)pos.y, this->effectSpriteDim.x, this->effectSpriteDim.y },
-	0, false));
+		0);
+	this->renderer.renderSprite(tex);
 }
 
-void vbl::Game::loadEffectSprite(Ball::PowerupType effect, const std::string& path)
+void vbl::Game::loadEffectSprite(Ball::PowerupType effect, const std::string& picture)
 {
 	int idx = (int)effect;
 	if (idx >= this->effectSpritesByType.size())
 	{
-		this->effectSpritesByType.resize(idx + 1, NULL);
+		this->effectSpritesByType.resize(idx + 1, "NO_ASSIGN");
 	}
-	if (this->effectSpritesByType[idx])
-	{
-		SDL_DestroyTexture(this->effectSpritesByType[idx]);
-	}
-	this->effectSpritesByType[idx] = this->renderer.load(path);
+	this->effectSpritesByType[idx] = picture;
 }
 
 vbl::SpriteTexture* vbl::Game::queueText(const std::string& str)
@@ -828,7 +828,6 @@ void vbl::Game::renderText()
 	{
 		SpriteTexture& tex = this->textToRender[this->textToRender.size() - 1];
 		this->renderer.renderSprite(tex);
-		tex.destroyTexture();
 		this->textToRender.pop_back();
 	}
 }
@@ -845,13 +844,9 @@ void vbl::Game::clearPowerups()
 	}
 }
 
-void vbl::Game::setWaitingScreen(uint16_t team, SDL_Rect box, const std::string& path)
+void vbl::Game::setWaitingScreen(uint16_t team, SDL_Rect box, const std::string& name)
 {
-	if (this->teamData.count(team))
-	{
-		this->teamData[team].waitingSprite.destroyTexture();
-	}
-	this->teamData[team].waitingSprite = SpriteTexture(this->renderer.load(path), box, 0, false);
+	this->teamData[team].waitingSprite = SpriteTexture(name, box, 0);
 }
 
 void vbl::Game::cameraShake(float length, float amplitude)

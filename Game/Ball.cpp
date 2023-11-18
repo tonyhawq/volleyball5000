@@ -1,13 +1,13 @@
 #include "Ball.h"
 
-vbl::Ball::Ball(SDL_Texture* texture, SDL_Texture* glowTexture, float diameter)
-	:GameSprite({diameter, diameter}, texture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowTexture)
+vbl::Ball::Ball(const std::string& picture, const std::string& glowPicture, float diameter)
+	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowPicture)
 {
 
 }
 
-vbl::Ball::Ball(SDL_Texture* texture, SDL_Texture* glowTexture, float diameter, PowerupType powerup)
-	:GameSprite({diameter, diameter}, texture, true), wasTriggered(false), triggeredTeam(0), powerup(powerup), glowTexture(glowTexture)
+vbl::Ball::Ball(const std::string& picture, const std::string& glowPicture, float diameter, PowerupType powerup)
+	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), powerup(powerup), glowTexture(glowPicture)
 {
 
 }
@@ -53,7 +53,7 @@ void vbl::Ball::bounceOff(const std::shared_ptr<vbl::Sprite> sprite, bool simula
 			30,
 			maf::setMiddle(this->getVisMid(), boingsize),
 			{ 0,0 },
-			this->getParticle("bnk"),
+			*this->getParticle("bnk"),
 			{ 0,0,(int)boingsize.x,(int)boingsize.y },
 			this->texture.getRotation(),
 			0
@@ -191,7 +191,6 @@ void vbl::Ball::reset(uint32_t spawnTime)
 	this->texture.rotate(-this->texture.getRotation());
 	this->spawnTime = spawnTime;
 	this->spawning = spawnTime;
-	printf("spawn time is %u\n", this->spawnTime);
 }
 
 const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit)
@@ -234,7 +233,7 @@ void vbl::Ball::collisionParticle(int count)
 			120,
 			this->getVisMid(),
 			{ 0,0 },
-			this->getParticle("cld"),
+			*this->getParticle("cld"),
 			{ 0,0,24,24 },
 			0,
 			0,

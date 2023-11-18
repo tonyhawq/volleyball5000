@@ -131,6 +131,7 @@
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,6 +142,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Atlas.cpp" />
+    <ClCompile Include="Game\Debug\logging.cpp" />
     <ClCompile Include="Game\Except\Except.cpp" />
     <ClCompile Include="Game\Except\MapLoading.cpp" />
     <ClCompile Include="Game\GameSprite.cpp" />
@@ -156,6 +159,9 @@
     <ClCompile Include="Game\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Atlas.h" />
+    <ClInclude Include="Game\Debug\logging.h" />
+    <ClInclude Include="Game\Debug\logtools.h" />
     <ClInclude Include="Game\Except\Except.h" />
     <ClInclude Include="Game\Except\MapLoading.h" />
     <ClInclude Include="Game\GameSprite.h" />

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <SDL.h>
+#include <string>
 
 #include "maf.h"
 
@@ -35,8 +36,10 @@ namespace vbl
 	class SpriteTexture
 	{
 	public:
-		SpriteTexture(SDL_Texture* texture, SDL_Rect box, float rotation, bool responsible = true);
-		SpriteTexture(SDL_Texture* texture, SDL_Rect box, float rotation, maf::ivec2 spriteDimensions, bool responsible = true);
+		static size_t INVALID_CACHED;
+
+		SpriteTexture(const std::string& picture, SDL_Rect box, float rotation);
+		SpriteTexture(const std::string& picture, SDL_Rect box, float rotation, maf::ivec2 spriteDimensions);
 		SpriteTexture();
 		~SpriteTexture();
 
@@ -48,11 +51,10 @@ namespace vbl
 		inline void setMiddle(maf::ivec2 pos) { setPos({ pos.x - this->textureBox.w / 2, pos.y - this->textureBox.h / 2 }); }
 		inline maf::ivec2 getMiddle() const { return { this->textureBox.x + this->textureBox.w / 2,this->textureBox.y + this->textureBox.h / 2 }; }
 		inline maf::ivec2 feet() const { return { this->textureBox.x + this->textureBox.w / 2, this->textureBox.y + this->textureBox.h }; }
-		inline void destroyTexture() { SDL_DestroyTexture(this->texture); this->texture = NULL; }
 
 		inline const SDL_Rect* getRect() const { return &textureBox; }
-		inline SDL_Texture* getTexture() const { return texture; }
-		inline SDL_Texture* setTexture(SDL_Texture* texture) { SDL_Texture* temp = this->texture; this->texture = texture; return temp; }
+		inline const std::string& getPicture() const { return this->picture; }
+		inline void setPicture(const std::string& str) { this->picture = str; }
 
 		inline void setAnimated(bool is) { this->animated = is; }
 		inline bool isAnimated() const { return this->animated; }
@@ -63,21 +65,21 @@ namespace vbl
 		inline void setSpriteHeight(int h) { this->spriteDimensions.y = h; }
 		inline SDL_Rect getClippingRect() const { return {this->spriteDimensions.x * this->animState, 0, this->spriteDimensions.x, spriteDimensions.y}; }
 	
-		bool responsible = true;
+		size_t cachedID = INVALID_CACHED;
 	private:
 		bool animated = false;
 		maf::ivec2 spriteDimensions;
 		int animState;
 		float rotation;
-		SDL_Texture* texture;
+		std::string picture;
 		SDL_Rect textureBox;
 	};
 
 	class Sprite
 	{
 	public:
-		Sprite(maf::fvec2 dimensions, SDL_Texture* tex, bool useDimensionsForBox = false);
-		Sprite(maf::fvec2 dimensions, SDL_Texture* tex, maf::ivec2 spriteDimensions, bool useDimensionsForBox = false);
+		Sprite(maf::fvec2 dimensions, const std::string& picture, bool useDimensionsForBox = false);
+		Sprite(maf::fvec2 dimensions, const std::string& picture, maf::ivec2 spriteDimensions, bool useDimensionsForBox = false);
 
 		void move(maf::fvec2 much);
 		void setPos(maf::fvec2 pos);

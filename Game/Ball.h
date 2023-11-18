@@ -19,8 +19,8 @@ namespace vbl
 			POWERUP_SLOWTIME,
 		};
 
-		Ball(SDL_Texture* texture, SDL_Texture* glowTexture, float diameter);
-		Ball(SDL_Texture* texture, SDL_Texture* glowTexture, float diameter, PowerupType powerup);
+		Ball(const std::string& picture, const std::string& glowPicture, float diameter);
+		Ball(const std::string& picture, const std::string& glowPicture, float diameter, PowerupType powerup);
 
 		inline void setGravity(float gravity) { this->gravity = gravity; }
 
@@ -45,7 +45,7 @@ namespace vbl
 
 		inline uint32_t isSpawning() const { return this->spawning; }
 		inline uint8_t getGlow() const { return this->glow; }
-		inline SDL_Texture* getGlowTex() { return this->glowTexture; }
+		inline const std::string& getGlowTex() { return this->glowTexture; }
 		inline bool hitGuy() const { return this->lastBoink > 0; }
 		inline float hitStrength() const { return this->lastBoinkStrength; }
 
@@ -53,7 +53,7 @@ namespace vbl
 	private:
 		uint32_t spawnTime = 0;
 		uint32_t spawning = 0;
-		SDL_Texture* glowTexture;
+		const std::string& glowTexture;
 		uint8_t glow = 0;
 		bool bounced = false;
 		PowerupType powerup = POWERUP_NONE;

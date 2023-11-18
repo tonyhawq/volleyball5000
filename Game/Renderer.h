@@ -1,29 +1,30 @@
 #pragma once
 
-#include "Geometry.h"
-#include "Particles.h"
-
 #include <SDL.h>
 #include <string>
 #include <unordered_map>
+
+#include "Geometry.h"
+#include "Particles.h"
+#include "Atlas.h"
 
 namespace vbl
 {
 	class Renderer
 	{
 	public:
-		Renderer(uint32_t width, uint32_t height, float renderScale);
+		Renderer(uint32_t width, uint32_t height, uint32_t atlasWidth, uint32_t atlasHeight, float renderScale);
 
 		void clearFrame();
 		void clearFrame(SDL_Color clr);
 		void presentFrame();
 
-		void renderSprite(const SpriteTexture& sprite);
-		void renderSprite(const SpriteTexture& sprite, uint8_t alpha);
+		void renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha = 255);
+		void renderSprite(SpriteTexture& sprite, uint8_t alpha = 255);
 		void renderBoundingBox(const MAABB& box, SDL_Color clr = {0, 255, 0, 255});
 		void renderGeometry(const Geometry& geometry);
 		void renderGeometry(const Geometry& geometry, bool debug);
-		void renderTrace(const std::vector<maf::ivec2>& points, SDL_Texture* endTex);
+		void renderTrace(const std::vector<maf::ivec2>& points, SpriteTexture& endTex);
 
 		void loadChars(const std::string& fontPath, SDL_Color clr);
 
@@ -49,6 +50,8 @@ namespace vbl
 		inline maf::fvec2 getPos() const { return this->pos; }
 		inline void setPos(maf::fvec2 pos) { this->pos = pos; }
 		inline void move(maf::fvec2 vel) { this->pos.x += vel.x; this->pos.y += vel.y; }
+
+		Atlas atlas;
 	private:
 		maf::fvec2 pos;
 		std::unordered_map<char, SDL_Texture*> charMap;
