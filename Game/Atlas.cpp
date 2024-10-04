@@ -93,21 +93,17 @@ maf::ivec2 Atlas::findOrMakeScanline(maf::ivec2 dimensions)
 	return { 0, currentHeight };
 }
 
-std::vector<std::string> Atlas::addBulk(std::vector<std::string> paths, std::vector<std::string> names)
+std::vector<std::string> Atlas::addBulk(std::vector<pair_str_t> paths)
 {
 	std::vector<std::string> rejects;
 	for (size_t i = 0; i < paths.size(); i++)
 	{
-		std::string path = paths[i];
-		DEBUG_LOG(std::format("beginning loading {} into atlas.", path));
-		std::string name = path;
-		if (i < names.size())
-		{
-			name = names[i];
-		}
+		std::string path = paths[i].first;
+		DEBUG_LOG(std::format("beginning loading {} ({}) into atlas.", path, name));
+		std::string name = paths[i].second;
 		if (add(path, name))
 		{
-			LOG(std::format("Atlas rejected file {}.", path));
+			LOG(std::format("Atlas rejected file {} ({}).", path, name));
 			rejects.push_back(path);
 		}
 	}
