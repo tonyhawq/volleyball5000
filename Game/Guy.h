@@ -84,7 +84,7 @@ namespace vbl
 
 		void link(Controller* controller);
 
-		bool collidesWithGeometryBox(const GeometryBox* box);
+		bool isPhysicalCollision(const GeometryBox* box);
 		void moveWithCollision(const Geometry& geometry);
 		void update(const Geometry& geometry, uint16_t tick);
 		void updatePowerups();
@@ -113,6 +113,8 @@ namespace vbl
 		inline Gun* gun() { return this->firearm; }
 		inline bool hasGun() const { return (!!firearm); }
 	private:
+		std::vector<uint32_t> cached_res;
+
 		Gun* firearm;
 
 		std::vector<Powerup> powers;

@@ -205,7 +205,7 @@ void vbl::Guy::reset()
 	this->dashes = this->maxDashes;
 }
 
-bool vbl::Guy::collidesWithGeometryBox(const GeometryBox* box)
+bool vbl::Guy::isPhysicalCollision(const GeometryBox* box)
 {
 	if (!box)
 	{
@@ -238,10 +238,10 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 	while (increment > 0)
 	{
 		this->move({ this->vel.x / steps, 0 });
-		std::vector<uint32_t> xres = geometry.collidesWithRes(this->box);
-		for (const auto res : xres)
+		geometry.collidesWithResNoalloc(this->box, this->cached_res);
+		for (const auto res : cached_res)
 		{
-			if (collidesWithGeometryBox(geometry.get(res)))
+			if (isPhysicalCollision(geometry.get(res)))
 			{
 				this->move({ -this->vel.x / steps, 0 });
 				onGround = true;
@@ -251,10 +251,10 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 			}
 		}
 		this->move({ 0, this->vel.y / steps });
-		std::vector<uint32_t> yres = geometry.collidesWithRes(this->box);
-		for (const auto res : yres)
+		geometry.collidesWithResNoalloc(this->box, this->cached_res);
+		for (const auto res : cached_res)
 		{
-			if (collidesWithGeometryBox(geometry.get(res)))
+			if (isPhysicalCollision(geometry.get(res)))
 			{
 				this->move({ 0, -this->vel.y / steps });
 				onGround = true;

@@ -9,6 +9,7 @@
 #include "Particles.h"
 #include "Atlas.h"
 #include "Text.h"
+#include "Ball.h"
 
 namespace vbl
 {
@@ -28,7 +29,7 @@ namespace vbl
 		void renderBoundingBox(const MAABB& box, SDL_Color clr = {0, 255, 0, 255});
 		void renderGeometry(const Geometry& geometry);
 		void renderGeometry(const Geometry& geometry, bool debug);
-		void renderTrace(const std::vector<maf::ivec2>& points, SpriteTexture& endTex);
+		void renderTrace(const vbl::Ball::Trace& trace, SpriteTexture& endTex);
 
 		void debugRender(SDL_Surface* surface);
 		void debugRender(SDL_Texture* texture);

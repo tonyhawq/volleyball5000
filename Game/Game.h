@@ -162,6 +162,8 @@ namespace vbl
 		float updateTime = 0;
 		float renderTime = 0;
 		float frameTime = 0;
+		float max_updateTime = 0;
+		float max_renderTime = 0;
 		float remainingShake = 0;
 		float shakeAmp = 0;
 		uint32_t nextPowerupTick;

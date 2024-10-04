@@ -635,8 +635,8 @@ void vbl::Game::updateGame()
 	{
 		std::shared_ptr<vbl::Ball> ball = this->map.balls[i];
 		ball->setGravity(this->map.gravity);
-		ball->update(this->map.getGeometry(), this->map.actors, this->tick);
-		ball->trace(this->map.geometry, this->map.actors, 200, 4);
+		ball->update(this->map.getGeometry(), this->map.actors, this->tick, 1.0f);
+		ball->trace(this->map.geometry, this->map.actors, 2000, 16);
 		this->particleManager.addParticles(ball->getParticles());
 		this->sound.takeSounds(ball->getSounds());
 		if (ball->hitGuy() && ball->hitStrength() > 15)
@@ -739,10 +739,14 @@ void vbl::Game::update()
 	{
 		this->remainingShake--;
 	}
-	this->queueText(std::to_string(this->updateTime) + "ms "
-		+ std::to_string(this->renderTime) + "ms "
+	this->queueText(std::to_string(this->updateTime) + "ms ("
+		+ std::to_string(this->max_updateTime) + "ms) "
+		+ std::to_string(this->renderTime) + "ms ("
+		+ std::to_string(this->max_renderTime) + "ms) "
 		+ std::to_string(this->frameTime) + "ms "
 		+ ((this->updateTime > this->renderTime) ? "update" : "render"));
+	this->max_updateTime = std::max(this->updateTime, this->max_updateTime);
+	this->max_renderTime = std::max(this->renderTime, this->max_renderTime);
 }
 
 void vbl::Game::render()
@@ -788,7 +792,7 @@ void vbl::Game::render()
 		{
 			continue;
 		}
-		this->renderer.renderTrace(ball->tracePoints, this->traceEndTexture);
+		this->renderer.renderTrace(ball->tracer, this->traceEndTexture);
 	}
 	if (this->state == GameState::STATE_WAITING_FOR_INPUT)
 	{

@@ -19,6 +19,12 @@ namespace vbl
 			POWERUP_SLOWTIME,
 		};
 
+		struct Trace
+		{
+			std::vector<maf::ivec2> points;
+			uint32_t length;
+		};
+
 		Ball(const std::string& picture, const std::string& glowPicture, float diameter);
 		Ball(const std::string& picture, const std::string& glowPicture, float diameter, PowerupType powerup);
 
@@ -33,11 +39,11 @@ namespace vbl
 		uint8_t collidesWithGeometryBox(const GeometryBox* box);
 		const std::shared_ptr<vbl::Sprite> collidesWithActor(const std::vector<std::shared_ptr<vbl::Sprite>>& actors);
 
-		const std::vector<maf::ivec2>& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit = 9999);
+		const Trace& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit = 9999);
 
 		void bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated = false);
-		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, bool simulated = false);
-		void update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, uint32_t tick, bool simulated = false);
+		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, float resolution, bool simulated = false);
+		void update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t tick, float resolution, bool simulated = false);
 
 		void reset(uint32_t spawnTime);
 
@@ -51,15 +57,15 @@ namespace vbl
 
 		void collisionParticle(int count);
 
-		std::vector<maf::ivec2> tracePoints;
+		Trace tracer;
 	private:
+		std::vector<uint32_t> cached_res;
 		uint32_t spawnTime = 0;
 		uint32_t spawning = 0;
 		const std::string& glowTexture;
 		uint8_t glow = 0;
 		bool bounced = false;
 		PowerupType powerup = POWERUP_NONE;
-		std::shared_ptr<vbl::Sprite> wasInside = NULL;
 		float gravity = 0;
 		bool wasTriggered;
 		uint16_t triggeredTeam;

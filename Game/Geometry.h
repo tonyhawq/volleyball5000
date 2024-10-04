@@ -37,8 +37,11 @@ namespace vbl
 
 		bool collides(const MAABB& other) const;
 		bool collidesNotrigger(const MAABB& other) const;
+		void collidesWithResNoalloc(const MAABB& other, std::vector<uint32_t>& vec) const;
+		const std::vector<uint32_t>& collidesWithResSelfNoalloc(const MAABB& other);
 		std::vector<uint32_t> collidesWithRes(const MAABB& other) const;
 	private:
+		std::vector<uint32_t> cached_indicies;
 		std::vector<GeometryBox> boxes;
 		std::vector<ColoredRect> rects;
 	};

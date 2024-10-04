@@ -74,7 +74,7 @@ std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const
 {
 	std::vector<uint32_t> indicies;
 	indicies.reserve(this->boxes.size());
-	const std::vector<maf::frect> boxes = other.getBoxes();
+	const std::vector<maf::frect>& boxes = other.getBoxes();
 	for (uint32_t i = 0; i < this->boxes.size(); i++)
 	{
 		for (uint32_t j = 0; j < boxes.size(); j++)
@@ -86,4 +86,30 @@ std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const
 		}
 	}
 	return indicies;
+}
+
+void vbl::Geometry::collidesWithResNoalloc(const MAABB& other, std::vector<uint32_t>& vec) const
+{
+	vec.clear();
+	if (vec.capacity() < this->boxes.size())
+	{
+		vec.reserve(this->boxes.size());
+	}
+	const std::vector<maf::frect>& boxes = other.getBoxes();
+	for (uint32_t this_i = 0; this_i < this->boxes.size(); this_i++)
+	{
+		for (uint32_t other_i = 0; other_i < boxes.size(); other_i++)
+		{
+			if (maf::collides(this->boxes[this_i].box, boxes[other_i]))
+			{
+				vec.push_back(this_i);
+			}
+		}
+	}
+}
+
+const std::vector<uint32_t>& vbl::Geometry::collidesWithResSelfNoalloc(const MAABB& other)
+{
+	collidesWithResNoalloc(other, this->cached_indicies);
+	return this->cached_indicies;
 }

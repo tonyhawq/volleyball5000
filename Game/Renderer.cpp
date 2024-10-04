@@ -230,18 +230,18 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry, bool debug)
 	}
 }
 
-void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points, SpriteTexture& endTex)
+void vbl::Renderer::renderTrace(const vbl::Ball::Trace& trace, SpriteTexture& endTex)
 {
-	if (points.size() < 2)
+	if (trace.points.size() < 2)
 	{
 		return;
 	}
 	SDL_SetRenderDrawColor(this->renderer, 255, 0, 0, 255);
-	maf::ivec2 lastPoint = points[0];
-	for (int i = 1; i < points.size(); i++)
+	maf::ivec2 lastPoint = trace.points[0];
+	for (int i = 1; i < trace.length; i++)
 	{
-		SDL_RenderDrawLine(this->renderer, int(lastPoint.x * renderScale), int(lastPoint.y * renderScale), int(points[i].x * renderScale), int(points[i].y * renderScale));
-		lastPoint = points[i];
+		SDL_RenderDrawLine(this->renderer, int(lastPoint.x * renderScale), int(lastPoint.y * renderScale), int(trace.points[i].x * renderScale), int(trace.points[i].y * renderScale));
+		lastPoint = trace.points[i];
 	}
 	endTex.setMiddle({ lastPoint.x, lastPoint.y });
 	renderSprite(endTex);
@@ -294,7 +294,8 @@ void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
 		'h', 'i', 'j', 'k', 'l', 'm',
 		'n', 'o', 'p', 'q', 'r', 's',
 		't', 'u', 'v', 'w', 'x', 'y',
-		'z', '.', '*', '-', ',', ' '
+		'z', '.', '*', '-', ',', ' ',
+		'(', ')'
 	};
 	int i = 0;
 	int characterW = 5;
