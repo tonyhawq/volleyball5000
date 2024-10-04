@@ -8,7 +8,7 @@
 #include "strhelp.h"
 #include "loadutils.h"
 
-#include "Debug/logtools.h"
+#include "GDebug/logtools.h"
 
 void vbl::Map::load(const std::string& path)
 {

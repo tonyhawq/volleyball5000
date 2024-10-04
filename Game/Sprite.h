@@ -45,7 +45,7 @@ namespace vbl
 
 		inline void setPos(maf::ivec2 pos) { this->textureBox.x = pos.x; this->textureBox.y = pos.y; }
 		inline void resize(maf::ivec2 dimensions) { this->textureBox.w = dimensions.x; this->textureBox.h = dimensions.y; }
-		inline void resize(float by) { this->textureBox.w *= by; this->textureBox.h *= by; }
+		inline void resize(float by) { this->textureBox.w = int((float)this->textureBox.w * by); this->textureBox.h = int((float)this->textureBox.h* by); }
 		inline void rotate(float degrees) { this->rotation += degrees; }
 		inline float getRotation() const { return this->rotation; }
 		inline void setMiddle(maf::ivec2 pos) { setPos({ pos.x - this->textureBox.w / 2, pos.y - this->textureBox.h / 2 }); }

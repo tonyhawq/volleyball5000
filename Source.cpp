@@ -2,7 +2,7 @@
 #include "Game/Atlas.h"
 #include "Game/AIs/SimpleAi.h"
 
-#include "Game/Debug/logtools.h"
+#include "Game/GDebug/logtools.h"
 
 #include <SDL_image.h>
 

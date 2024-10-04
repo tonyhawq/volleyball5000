@@ -60,6 +60,10 @@ namespace maf
 		inline SDL_FRect SDL() const
 		{
 			return { x, y, w, h };
+		};
+		inline SDL_Rect SDLI() const
+		{
+			return { (int)x, (int)y, (int)w, (int)h };
 		}
 	};
 

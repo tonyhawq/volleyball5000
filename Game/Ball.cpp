@@ -72,7 +72,7 @@ void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::S
 	float imparted = (abs(vel.x - prevVel.x) + abs(vel.y - prevVel.y)) / 2;
 	float guyDir = (float)maf::pointTowards(sprite->getBox().getMiddle(), this->getBox().getMiddle());
 	sprite->setVel(sprite->getVel() + maf::fvec2{ maf::clamp(-imparted * std::sin(guyDir), -5.0f, 5.0f), maf::clamp(imparted * std::cos(guyDir), -5.0f, 5.0f) });
-	collisionParticle(std::max(speedDiff, 4.0f));
+	collisionParticle(int(std::max(speedDiff, 4.0f)));
 	// bounded lest it go on ad infinitum...
 	int loops = 25;
 	maf::fvec2 antithesis = { -std::sin(guyDir), std::cos(guyDir) };

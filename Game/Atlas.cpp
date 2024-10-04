@@ -2,7 +2,7 @@
 
 #include <SDL_image.h>
 
-#include "Debug/logtools.h"
+#include "GDebug/logtools.h"
 
 Atlas::Atlas(int w, int h)
 	:surf(NULL), texture(NULL), lastUsed(NULL)

@@ -145,7 +145,6 @@
     <ClCompile Include="Game\AI.cpp" />
     <ClCompile Include="Game\AIs\SimpleAi.cpp" />
     <ClCompile Include="Game\Atlas.cpp" />
-    <ClCompile Include="Game\Debug\logging.cpp" />
     <ClCompile Include="Game\Except\Except.cpp" />
     <ClCompile Include="Game\Except\MapLoading.cpp" />
     <ClCompile Include="Game\GameSprite.cpp" />
@@ -166,13 +165,12 @@
     <ClInclude Include="Game\AI.h" />
     <ClInclude Include="Game\AIs\SimpleAi.h" />
     <ClInclude Include="Game\Atlas.h" />
-    <ClInclude Include="Game\Debug\logging.h" />
-    <ClInclude Include="Game\Debug\logtools.h" />
     <ClInclude Include="Game\Except\Except.h" />
     <ClInclude Include="Game\Except\MapLoading.h" />
     <ClInclude Include="Game\GameSprite.h" />
     <ClInclude Include="Game\Ball.h" />
     <ClInclude Include="Game\Game.h" />
+    <ClInclude Include="Game\GDebug\logtools.h" />
     <ClInclude Include="Game\Guy.h" />
     <ClInclude Include="Game\loadutils.h" />
     <ClInclude Include="Game\maf.h" />

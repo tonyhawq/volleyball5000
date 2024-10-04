@@ -5,7 +5,7 @@
 #include <iostream>
 #include <filesystem>
 
-#include "Debug/logtools.h"
+#include "GDebug/logtools.h"
 
 vbl::Renderer::Renderer(uint32_t width, uint32_t height, uint32_t atlasWidth, uint32_t atlasHeight, float renderScale)
 	:renderer(NULL), window(NULL), target(NULL), renderScale(renderScale), atlas(atlasWidth, atlasHeight)
@@ -186,7 +186,7 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry)
 	for (const auto& rect : geometry.getRects())
 	{
 		SDL_SetRenderDrawColor(this->renderer, rect.clr.r, rect.clr.g, rect.clr.b, rect.clr.a);
-		SDL_Rect temp = { rect.box.x, rect.box.y, rect.box.w, rect.box.h };
+		SDL_Rect temp = rect.box.SDLI();
 		mapRect(&temp);
 		SDL_RenderFillRect(this->renderer, &temp);
 		SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
@@ -325,7 +325,8 @@ void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
 
 std::shared_ptr<vbl::RawTexture> vbl::Renderer::makeText(const std::string& str)
 {
-	SDL_Surface* textSurf = SDL_CreateRGBSurfaceWithFormat(0, str.size() * 5 + std::max((int)str.size() - 1, 0) + 1, 7, 32, SDL_PIXELFORMAT_RGBA8888);
+	// size_t narrow
+	SDL_Surface* textSurf = SDL_CreateRGBSurfaceWithFormat(0, int(str.size()) * 5 + std::max((int)str.size() - 1, 0) + 1, 7, 32, SDL_PIXELFORMAT_RGBA8888);
 	SDL_FillRect(textSurf, NULL, SDL_MapRGBA(textSurf->format, 0, 0, 0, 0));
 	SDL_Rect at = { 0, 0, 5, 7 };
 	SDL_SetSurfaceBlendMode(textSurf, SDL_BLENDMODE_BLEND);
