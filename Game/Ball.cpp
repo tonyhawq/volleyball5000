@@ -28,7 +28,7 @@ void vbl::Ball::trigger(const GeometryBox* box)
 	this->triggeredTeam = box->team;
 }
 
-void vbl::Ball::bounceOff(const std::shared_ptr<vbl::Sprite> sprite, bool simulated)
+void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated)
 {
 	if (!sprite)
 	{
@@ -39,6 +39,7 @@ void vbl::Ball::bounceOff(const std::shared_ptr<vbl::Sprite> sprite, bool simula
 		return;
 	}
 	bounced = true;
+	maf::fvec2 prevVel = this->vel;
 	maf::fvec2 otherPos = sprite->getBox().getMiddle();
 	maf::fvec2 otherVel = sprite->getVel();
 	float speedDiff = abs(this->vel.x - otherVel.x) + abs(this->vel.y - otherVel.y);
@@ -68,7 +69,36 @@ void vbl::Ball::bounceOff(const std::shared_ptr<vbl::Sprite> sprite, bool simula
 	{
 		return;
 	}
+	float imparted = (abs(vel.x - prevVel.x) + abs(vel.y - prevVel.y)) / 2;
+	float guyDir = (float)maf::pointTowards(sprite->getBox().getMiddle(), this->getBox().getMiddle());
+	sprite->setVel(sprite->getVel() + maf::fvec2{ maf::clamp(-imparted * std::sin(guyDir), -5.0f, 5.0f), maf::clamp(imparted * std::cos(guyDir), -5.0f, 5.0f) });
 	collisionParticle(std::max(speedDiff, 4.0f));
+	// bounded lest it go on ad infinitum...
+	int loops = 25;
+	maf::fvec2 antithesis = { -std::sin(guyDir), std::cos(guyDir) };
+	bool hitGeo = false;
+	while (loops > 0 && this->box.collide(sprite->getBox()))
+	{
+		hitGeo = false;
+		loops--;
+		sprite->move({ antithesis.x, 0 });
+		if (geometry.collidesNotrigger(sprite->getBox()))
+		{
+			antithesis.x = -antithesis.x;
+			sprite->move({ antithesis.x, 0 });
+			hitGeo = true;
+		}
+		sprite->move({ 0, antithesis.y });
+		if (geometry.collidesNotrigger(sprite->getBox()))
+		{
+			antithesis.y = -antithesis.y;
+			sprite->move({ 0, antithesis.y });
+			if (hitGeo)
+			{
+				break;
+			}
+		}
+	}
 }
 
 const std::shared_ptr<vbl::Sprite> vbl::Ball::collidesWithActor(const std::vector<std::shared_ptr<vbl::Sprite>>& actors)
@@ -171,7 +201,7 @@ void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_p
 	const std::shared_ptr<vbl::Sprite> res = collidesWithActor(actors);
 	if (res)
 	{
-		this->bounceOff(res, simulated);
+		this->bounceOff(geometry, res, simulated);
 	}
 	this->wasInside = res;
 	if (this->lastBoink > 0)

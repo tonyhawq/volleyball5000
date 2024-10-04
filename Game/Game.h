@@ -13,6 +13,7 @@
 
 namespace vbl
 {
+	class AI;
 	class Map
 	{
 	public:
@@ -74,6 +75,7 @@ namespace vbl
 			int score = 0;
 			maf::ivec2 scoreTextPos = { 0,0 };
 			std::unordered_map<Ball::PowerupType, int> teamPowerups;
+			SDL_Color color{};
 		};
 
 		Game(uint32_t width, uint32_t height, float scale);
@@ -98,6 +100,7 @@ namespace vbl
 		inline void quit() { this->isRunning = false; }
 		inline bool running() const { return this->isRunning; }
 
+		void registerAI(AI*);
 		int makeController(const std::string& name, uint16_t team);
 		int makeGuy(const std::string& name, const std::string& picture, maf::ivec2 spriteDim);
 		std::shared_ptr<vbl::Ball> makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture);
@@ -120,12 +123,14 @@ namespace vbl
 		void unlink(const std::string& guyName);
 		Controller* getController(const std::string& name);
 
-		SpriteTexture* queueText(const std::string& str);
+		std::shared_ptr<RawTexture> queueText(const std::string& str);
 		void renderText();
 
 		void resetGame();
 
 		inline TeamData* changeTeam(uint16_t team) { if (!this->teamData.count(team)) { return NULL; } return &this->teamData[team]; }
+
+		void spawnFadeUp(uint16_t team, uint32_t duration);
 
 		enum class GameState
 		{
@@ -135,6 +140,9 @@ namespace vbl
 			STATE_SCORED,
 		};
 	//private:
+		bool lmb = false;
+		bool rmb = false;
+		bool seeBoxes = false;
 		SpriteTexture traceEndTexture;
 		GameState state = GameState::STATE_WAITING_FOR_INPUT;
 		Renderer renderer;
@@ -150,7 +158,7 @@ namespace vbl
 		ParticleManager particleManager;
 		uint32_t scoredCooldown = 0;
 		Sounds sound;
-		std::vector<SpriteTexture> textToRender;
+		std::vector<std::shared_ptr<RawTexture>> textToRender;
 		float updateTime = 0;
 		float renderTime = 0;
 		float frameTime = 0;

@@ -5,7 +5,7 @@ size_t vbl::SpriteTexture::INVALID_CACHED = SIZE_MAX;
 vbl::SpriteTexture::SpriteTexture(const std::string& picture, SDL_Rect box, float rotation)
 	:picture(picture), textureBox(box), rotation(rotation), spriteDimensions({box.w, box.h}), animState(0)
 {
-	
+
 }
 
 vbl::SpriteTexture::SpriteTexture()

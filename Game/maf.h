@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <SDL_rect.h>
 
 namespace maf
 {
@@ -18,13 +19,13 @@ namespace maf
 	struct ivec2
 	{
 		int x = 0, y = 0;
-		//operator fvec2()
-		//{
-		//	fvec2 p;
-		//	p.x = this->x;
-		//	p.y = this->y;
-		//	return p;
-		//}
+		/*operator fvec2()
+		{
+			fvec2 p;
+			p.x = this->x;
+			p.y = this->y;
+			return p;
+		}*/
 		ivec2 operator+ (const ivec2& other)
 		{
 			return { this->x + other.x, this->y + other.y };
@@ -44,6 +45,10 @@ namespace maf
 		{
 			return { this->x + other.x, this->y + other.y };
 		}
+		fvec2 operator- ()
+		{
+			return { -this->x, -this->y };
+		}
 	};
 	struct irect
 	{
@@ -52,6 +57,10 @@ namespace maf
 	struct frect
 	{
 		float x = 0, y = 0, w = 0, h = 0;
+		inline SDL_FRect SDL() const
+		{
+			return { x, y, w, h };
+		}
 	};
 
 	/// <summary>
@@ -64,7 +73,7 @@ namespace maf
 	
 	inline float clamp(float a, float b, float c)
 	{
-		return std::max(std::min(a, b), c);
+		return std::min(std::max(a, b), c);
 	}
 
 	inline int sign(int i)

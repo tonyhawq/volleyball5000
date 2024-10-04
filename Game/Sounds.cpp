@@ -9,6 +9,11 @@ vbl::Sounds::Sounds(int openChannels)
 	Mix_AllocateChannels(openChannels);
 }
 
+void vbl::Sounds::setChannels(int amount)
+{
+	Mix_AllocateChannels(amount);
+}
+
 void vbl::Sounds::loadSound(const std::string& path, const std::string& name)
 {
 	Mix_Chunk* sound = Mix_LoadWAV(path.c_str());

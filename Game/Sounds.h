@@ -16,6 +16,8 @@ namespace vbl
 	public:
 		Sounds(int openChannels);
 
+		void setChannels(int amount);
+
 		void loadSound(const std::string& path, const std::string& name);
 		void loadSound(const std::vector<std::string>& path, const std::string& name);
 		void loadMusic(const std::string& path, const std::string& name);

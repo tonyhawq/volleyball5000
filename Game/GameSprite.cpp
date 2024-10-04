@@ -11,18 +11,18 @@ void vbl::GameSprite::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec
 	if (var)
 	{
 		int randomSize = (int)maf::random(-var, var);
-		this->queuedSpawns.push_back(Particle(
+		this->queuedSpawns.push_back(std::make_unique<Particle>(
 			lifespan + uint32_t(maf::random(-var, var) / 2),
-			{ pos.x + maf::random(-var, var), pos.y + maf::random(-var, var) },
-			{ maf::random(-var / 2, var / 2),maf::random(-var / 2, var / 2) },
+			maf::fvec2{ pos.x + maf::random(-var, var), pos.y + maf::random(-var, var) },
+			maf::fvec2{ maf::random(-var / 2, var / 2),maf::random(-var / 2, var / 2) },
 			picture,
-			{ 0,0, box.w + randomSize, box.h + randomSize },
+			SDL_Rect{ 0,0, box.w + randomSize, box.h + randomSize },
 			rotation,
 			rotationSpeed + maf::random(-var, var)));
 	}
 	else
 	{
-		this->queuedSpawns.push_back(Particle(lifespan, pos, vel, picture, box, rotation, rotationSpeed));
+		this->queuedSpawns.push_back(std::make_unique<Particle>(lifespan, pos, vel, picture, box, rotation, rotationSpeed));
 	}
 }
 

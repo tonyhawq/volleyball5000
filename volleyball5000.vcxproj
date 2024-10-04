@@ -142,6 +142,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\AI.cpp" />
+    <ClCompile Include="Game\AIs\SimpleAi.cpp" />
     <ClCompile Include="Game\Atlas.cpp" />
     <ClCompile Include="Game\Debug\logging.cpp" />
     <ClCompile Include="Game\Except\Except.cpp" />
@@ -154,11 +156,15 @@
     <ClCompile Include="Game\Renderer.cpp" />
     <ClCompile Include="Game\Particles.cpp" />
     <ClCompile Include="Game\Sounds.cpp" />
+    <ClCompile Include="Game\Gun.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Game\Sprite.cpp" />
     <ClCompile Include="Game\Timer.cpp" />
+    <ClCompile Include="Game\Text.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\AI.h" />
+    <ClInclude Include="Game\AIs\SimpleAi.h" />
     <ClInclude Include="Game\Atlas.h" />
     <ClInclude Include="Game\Debug\logging.h" />
     <ClInclude Include="Game\Debug\logtools.h" />
@@ -179,6 +185,8 @@
     <ClInclude Include="Game\Particles.h" />
     <ClInclude Include="Game\Sounds.h" />
     <ClInclude Include="Game\Timer.h" />
+    <ClInclude Include="Game\Text.h" />
+    <ClInclude Include="Game\Gun.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

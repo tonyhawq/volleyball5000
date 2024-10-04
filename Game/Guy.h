@@ -9,13 +9,16 @@
 #include "GameSprite.h"
 #include "Geometry.h"
 #include "Particles.h"
+#include "Gun.h"
 
 namespace vbl
 {
+	class AI;
 	class Controller
 	{
 	public:
 		Controller(const std::string& name, uint16_t team);
+		~Controller();
 
 		inline void reset() { this->hadInput = false; }
 		void update();
@@ -39,6 +42,12 @@ namespace vbl
 		inline bool queuedJump() { return jumpQueuedown > 0; }
 		inline void jumped() { jumpQueuedown = 0; }
 		inline void dashed() { dashQueuedown = 0; }
+		
+		void widow();
+		void marry(AI* wife);
+
+		inline const AI* wife() const { return this->controlledBy; }
+		inline AI* wife() { return this->controlledBy; }
 
 		maf::ivec2 getInput() const;
 		inline const std::string& getName() const { return this->name; }
@@ -50,6 +59,7 @@ namespace vbl
 
 		inline bool ready() const { return this->hadInput; }
 	private:
+		AI* controlledBy;
 		bool hadInput = false;
 
 		uint16_t team;
@@ -100,7 +110,10 @@ namespace vbl
 		inline const Controller* getController() const { return this->controller; }
 		inline Controller* changeController() { return this->controller; }
 
+		inline Gun* gun() { return this->firearm; }
+		inline bool hasGun() const { return (!!firearm); }
 	private:
+		Gun* firearm;
 
 		std::vector<Powerup> powers;
 

@@ -47,6 +47,29 @@ bool vbl::Geometry::collides(const MAABB& other) const
 	return false;
 }
 
+bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
+{
+	for (const auto& a : boxes)
+	{
+		if (a.trigger)
+		{
+			continue;
+		}
+		if (a.team)
+		{
+			continue;
+		}
+		for (const auto& b : other.getBoxes())
+		{
+			if (maf::collides(a.box, b))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const
 {
 	std::vector<uint32_t> indicies;

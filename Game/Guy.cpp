@@ -1,10 +1,39 @@
 #include "Guy.h"
 #include "random.h"
+#include "AI.h"
 
 vbl::Controller::Controller(const std::string& name, uint16_t team)
-	:name(name), dashQueuedown(0), jumpQueuedown(0), team(team)
+	:name(name), dashQueuedown(0), jumpQueuedown(0), team(team), controlledBy(NULL)
 {
 	
+}
+
+vbl::Controller::~Controller()
+{
+	if (this->controlledBy)
+	{
+		this->controlledBy->widow();
+	}
+}
+
+void vbl::Controller::widow()
+{
+	if (this->controlledBy)
+	{
+		this->controlledBy->widow();
+	}
+	this->controlledBy = NULL;
+}
+
+void vbl::Controller::marry(AI* wife)
+{
+	if (!wife)
+	{
+		this->controlledBy = NULL;
+		return;
+	}
+	this->widow();
+	this->controlledBy = wife;
 }
 
 void vbl::Controller::update()

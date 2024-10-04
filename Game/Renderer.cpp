@@ -93,10 +93,10 @@ void vbl::Renderer::clearFrame(SDL_Color clr)
 
 void vbl::Renderer::presentFrame()
 {
-	if (SDL_SetRenderTarget(this->renderer, NULL)) { DEBUG_LOG(std::format("Setting render target failed, {}", SDL_GetError())); }
-	if (SDL_RenderCopy(this->renderer, this->target, NULL, NULL)) { DEBUG_LOG(std::format("Copying from low-res target failed, {}", SDL_GetError())); }
+	if (SDL_SetRenderTarget(this->renderer, NULL)) { LOGF_WARN("Setting render target failed, {}", SDL_GetError()); }
+	if (SDL_RenderCopy(this->renderer, this->target, NULL, NULL)) { LOGF_WARN("Copying from low-res target failed, {}", SDL_GetError()); }
 	SDL_RenderPresent(this->renderer);
-	if (SDL_SetRenderTarget(this->renderer, this->target)) { DEBUG_LOG("Setting render target to low-res failed, {}", SDL_GetError()); }
+	if (SDL_SetRenderTarget(this->renderer, this->target)) { LOGF_WARN("Setting render target to low-res failed, {}", SDL_GetError()); }
 }
 
 void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha)
@@ -114,7 +114,7 @@ void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha
 	{
 		DEBUG_LOG_F("Rendering sprite texture with picture {} failed. Atlas likely does not have {} registered.", sprite.getPicture(), sprite.getPicture());
 	}
-	DEBUG_LOG_F("{}, {} {}x{}", clipping.x, clipping.y, clipping.w, clipping.h);
+	//DEBUG_LOG_F("{}, {} {}x{}", clipping.x, clipping.y, clipping.w, clipping.h);
 	SDL_Rect scaled = *sprite.getRect();
 	mapRect(&scaled);
 	if (sprite.isAnimated())
@@ -154,12 +154,28 @@ void vbl::Renderer::renderSprite(SpriteTexture& sprite, uint8_t alpha)
 	renderSpriteConst(sprite, alpha);
 }
 
+void vbl::Renderer::renderText(std::shared_ptr<RawTexture> text)
+{
+	SDL_Rect pos = text->getPos();
+	this->mapRect(&pos);
+	SDL_RenderCopy(this->renderer, text->getTexture(), NULL, &pos);
+	printf(SDL_GetError());
+}
+
+void vbl::Renderer::renderRect(maf::frect rect, SDL_Color color)
+{
+	this->mapRect(&rect);
+	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
+	SDL_FRect sdl_rect = rect.SDL();
+	SDL_RenderDrawRectF(this->renderer, &sdl_rect);
+}
+
 void vbl::Renderer::renderBoundingBox(const MAABB& box, SDL_Color clr)
 {
 	SDL_SetRenderDrawColor(this->renderer, clr.r, clr.g, clr.b, clr.a);
 	for (const auto& rect : box.getBoxes())
 	{
-		SDL_FRect frect = { rect.x, rect.y, rect.w, rect.h };
+		SDL_FRect frect = rect.SDL();
 		mapRect(&frect);
 		SDL_RenderDrawRectF(this->renderer, &frect);
 	}
@@ -236,7 +252,7 @@ SDL_Texture* vbl::Renderer::load(const std::string& path, bool ignoreMissing)
 	SDL_Surface* surf = IMG_Load(path.c_str());
 	if (!surf)
 	{
-		DEBUG_LOG(std::format("Loading {} as surface failed, {}", path, SDL_GetError()));
+		LOG_WARN(std::format("Loading {} as surface failed, {}", path, SDL_GetError()));
 		if (!ignoreMissing)
 		{
 			surf = IMG_Load(this->missingTex.c_str());
@@ -245,11 +261,28 @@ SDL_Texture* vbl::Renderer::load(const std::string& path, bool ignoreMissing)
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surf);
 	if (!texture)
 	{
-		DEBUG_LOG(std::format("Loading {} into a texture failed, {}", path, SDL_GetError()));
+		LOG_WARN(std::format("Loading {} into a texture failed, {}", path, SDL_GetError()));
 	}
 	SDL_FreeSurface(surf);
 	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 	return texture;
+}
+
+void vbl::Renderer::debugRender(SDL_Surface* surface)
+{
+	SDL_Surface* windowSurf = SDL_GetWindowSurface(this->window);
+	SDL_FillRect(windowSurf, NULL, SDL_MapRGBA(windowSurf->format, 0, 0, 0, 255));
+	SDL_BlitScaled(surface, NULL, windowSurf, NULL);
+	SDL_UpdateWindowSurface(this->window);
+	SDL_Delay(1000);
+}
+
+void vbl::Renderer::debugRender(SDL_Texture* texture)
+{
+	this->clearFrame();
+	SDL_RenderCopy(this->renderer, texture, NULL, NULL);
+	this->presentFrame();
+	SDL_Delay(1000);
 }
 
 void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
@@ -261,54 +294,58 @@ void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
 		'h', 'i', 'j', 'k', 'l', 'm',
 		'n', 'o', 'p', 'q', 'r', 's',
 		't', 'u', 'v', 'w', 'x', 'y',
-		'z', '.', '*', '-', ','
+		'z', '.', '*', '-', ',', ' '
 	};
 	int i = 0;
 	int characterW = 5;
 	int characterH = 7;
 	SDL_Rect clip = { 0,0,characterW,characterH };
-	SDL_Texture* fontTex = this->load(fontPath);
-	if (!fontTex)
+	LOG_F("Loading font {}.", fontPath);
+	this->fontSurface = IMG_Load(fontPath.c_str());
+	if (!this->fontSurface)
 	{
+		LOG_F("Could not load font {}, {}.", fontPath, SDL_GetError());
+		for (int i = 0; i < sizeof(charset) / sizeof(char); i++)
+		{
+			this->charMap[charset[i]] = -1;
+		}
 		return;
 	}
-	SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 0);
-	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_NONE);
-	while (i < sizeof(charset) / sizeof(char))
+	int limit = sizeof(charset) / sizeof(char);
+	for (int i = 0; i < limit; i++)
 	{
-		SDL_Texture* charTex = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, characterW, characterH);
-		SDL_SetRenderTarget(this->renderer, charTex);
-		SDL_RenderFillRect(this->renderer, NULL);
-		SDL_RenderCopy(this->renderer, fontTex, &clip, NULL);
-		this->charMap[charset[i]] = charTex;
-		clip.x += clip.w;
-		i++;
+		this->charMap[charset[i]] = i * characterW;
+		if (i * characterW >= this->fontSurface->w)
+		{
+			this->charMap[charset[i]] = -characterW;
+		}
 	}
-	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_BLEND);
-	SDL_SetRenderTarget(this->renderer, this->target);
+	SDL_SetSurfaceBlendMode(this->fontSurface, SDL_BLENDMODE_BLEND);
 }
 
-vbl::SpriteTexture vbl::Renderer::renderText(const std::string& str)
+std::shared_ptr<vbl::RawTexture> vbl::Renderer::makeText(const std::string& str)
 {
-	SDL_Texture* text = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, str.size() * 5 + std::max((int)str.size() - 1, 0) + 1, 7);
-	SDL_SetRenderTarget(this->renderer, text);
-	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_NONE);
-	SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 0);
-	SDL_RenderFillRect(this->renderer, NULL);
-	SDL_SetTextureBlendMode(text, SDL_BLENDMODE_BLEND);
-	SDL_SetRenderDrawBlendMode(this->renderer, SDL_BLENDMODE_BLEND);
+	SDL_Surface* textSurf = SDL_CreateRGBSurfaceWithFormat(0, str.size() * 5 + std::max((int)str.size() - 1, 0) + 1, 7, 32, SDL_PIXELFORMAT_RGBA8888);
+	SDL_FillRect(textSurf, NULL, SDL_MapRGBA(textSurf->format, 0, 0, 0, 0));
 	SDL_Rect at = { 0, 0, 5, 7 };
-	for (const auto c : str)
+	SDL_SetSurfaceBlendMode(textSurf, SDL_BLENDMODE_BLEND);
+	for (int i = 0; i < str.size(); i++)
 	{
-		SDL_RenderCopy(this->renderer, this->charMap[c], NULL, &at);
-		at.x += at.w + 1;
+		int charX = this->charMap[str[i]];
+		if (charX < 0)
+		{
+			at.x += at.w;
+			continue;
+		}
+		SDL_Rect src = { charX, 0, 5, 7 };
+		SDL_BlitScaled(this->fontSurface, &src, textSurf, &at);
+		at.x += at.w;
 	}
-	SDL_SetRenderTarget(this->renderer, this->target);
-	SDL_DestroyTexture(text);
-	return SpriteTexture();
-}
-
-vbl::SpriteTexture vbl::Renderer::renderTextIrresponsible(const std::string& str)
-{
-	return SpriteTexture();
+	SDL_Texture* text = SDL_CreateTextureFromSurface(this->renderer, textSurf);
+	SDL_SetTextureBlendMode(text, SDL_BLENDMODE_BLEND);
+	std::shared_ptr<RawTexture> raw = std::make_shared_for_overwrite<RawTexture>();
+	raw->changeTexture(text);
+	raw->setRect({ 0,0,int(float(textSurf->w) / this->renderScale), int(float(textSurf->h) / this->renderScale) });
+	SDL_FreeSurface(textSurf);
+	return raw;
 }

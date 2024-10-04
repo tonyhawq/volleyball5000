@@ -35,7 +35,7 @@ namespace vbl
 
 		const std::vector<maf::ivec2>& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit = 9999);
 
-		void bounceOff(const std::shared_ptr<vbl::Sprite> sprite, bool simulated = false);
+		void bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated = false);
 		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, bool simulated = false);
 		void update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, uint32_t tick, bool simulated = false);
 
@@ -50,6 +50,8 @@ namespace vbl
 		inline float hitStrength() const { return this->lastBoinkStrength; }
 
 		void collisionParticle(int count);
+
+		std::vector<maf::ivec2> tracePoints;
 	private:
 		uint32_t spawnTime = 0;
 		uint32_t spawning = 0;
@@ -57,7 +59,6 @@ namespace vbl
 		uint8_t glow = 0;
 		bool bounced = false;
 		PowerupType powerup = POWERUP_NONE;
-		std::vector<maf::ivec2> tracePoints;
 		std::shared_ptr<vbl::Sprite> wasInside = NULL;
 		float gravity = 0;
 		bool wasTriggered;

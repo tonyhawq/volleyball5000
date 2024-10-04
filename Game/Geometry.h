@@ -36,6 +36,7 @@ namespace vbl
 		inline const GeometryBox* get(uint32_t i) const { if (i >= this->boxes.size()) { return NULL; } return &this->boxes[i]; }
 
 		bool collides(const MAABB& other) const;
+		bool collidesNotrigger(const MAABB& other) const;
 		std::vector<uint32_t> collidesWithRes(const MAABB& other) const;
 	private:
 		std::vector<GeometryBox> boxes;

@@ -209,6 +209,7 @@ vbl::Game::Game(uint32_t width, uint32_t height, float scale)
 {
 	this->renderer.setMissingTexture("missing.png");
 	this->traceEndTexture = SpriteTexture("trace_end", { 0,0,44,44 }, 0);
+	this->particleManager.game = this;
 }
 
 bool vbl::Map::collides(const MAABB& box) const
@@ -334,6 +335,11 @@ int vbl::Game::makeController(const std::string& name, uint16_t team)
 	return 0;
 }
 
+void vbl::Game::registerAI(vbl::AI* ai)
+{
+
+}
+
 int vbl::Game::makeGuy(const std::string& name, const std::string& picture, maf::ivec2 spriteDim)
 {
 	int result = map.addGuy(name, picture, spriteDim);
@@ -353,9 +359,9 @@ std::shared_ptr<vbl::Ball> vbl::Game::makeBall(maf::fvec2 pos, const std::string
 	ball->setParticle("cld", "ball_particle");
 	ball->setParticle("bnk", "boink");
 	ball->setSound("boink", this->sound.getID("boink"));
-	Particle& particle = this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), { 256,256 }), { 0,0 }, "glow", { 0, 0, 256, 256 }, 0, 0);
-	particle.changeTexture().usesSpecialBlendmode = true;
-	particle.changeTexture().specialBlendingMode = SDL_BLENDMODE_ADD;
+	Particle* particle = this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, "glow", {0, 0, 256, 256}, 0, 0);
+	particle->changeTexture().usesSpecialBlendmode = true;
+	particle->changeTexture().specialBlendingMode = SDL_BLENDMODE_ADD;
 	return ball;
 }
 
@@ -461,22 +467,32 @@ void vbl::Game::applyTeamPowerup(uint16_t team, Ball::PowerupType power, float l
 
 void vbl::Game::run()
 {
-	LOG("-------------------------------");
 	LOG_F("{} BEGAN GAME LOOP", (void*)this);
-	LOG("-------------------------------");
 	this->isRunning = true;
 	while (this->isRunning)
 	{
 		timer.set();
 		FLUSH_LOG();
-		this->update();
-		this->updateTime = timer.time();
-		this->render();
-		this->frameTime = timer.time();
-		this->renderTime = this->frameTime - this->updateTime;
-		if (this->frameTime < 15)
+		try
 		{
-			SDL_Delay(15 - (Uint32)this->frameTime);
+			this->update();
+			this->updateTime = timer.time();
+			this->render();
+			this->frameTime = timer.time();
+			this->renderTime = this->frameTime - this->updateTime;
+			if (this->frameTime < 15)
+			{
+				SDL_Delay(15 - (Uint32)this->frameTime);
+			}
+		}
+		catch (const std::bad_alloc& e)
+		{
+			LOG_WARN("Caught and silenced BAD_ALLOC");
+			printf("fatal error.\n");
+		}
+		catch (...)
+		{
+			LOG_WARN("Caught and silenced exception");
 		}
 		printf("update %fms\n", this->updateTime);
 		printf("render %fms\n", this->renderTime);
@@ -519,20 +535,53 @@ void vbl::Game::input()
 				c->keyUp(e.key.keysym.sym);
 			}
 			break;
+		case SDL_MOUSEBUTTONDOWN:
+			switch (e.button.button)
+			{
+			case SDL_BUTTON_LEFT:
+				this->lmb = true;
+				break;
+			case SDL_BUTTON_RIGHT:
+				this->rmb = true;
+				break;
+			}
+			break;
+		case SDL_MOUSEBUTTONUP:
+			switch (e.button.button)
+			{
+			case SDL_BUTTON_LEFT:
+				this->lmb = false;
+				break;
+			case SDL_BUTTON_RIGHT:
+				this->rmb = false;
+				break;
+			}
+			break;
 		default:
 			break;
 		}
 	}
 	maf::ivec2 mousePos{};
 	SDL_GetMouseState(&mousePos.x, &mousePos.y);
-	SpriteTexture* mousePosText = queueText(std::to_string(mousePos.x) + ", " + std::to_string(mousePos.y));
+	std::shared_ptr<RawTexture> mousePosText = queueText(std::to_string(mousePos.x) + ", " + std::to_string(mousePos.y));
 	mousePosText->setPos(mousePos);
-	SpriteTexture* text = queueText(std::to_string(this->tick));
+	std::shared_ptr<RawTexture> text = queueText(std::to_string(this->tick));
 	text->setPos({ 0, 30 });
 	text = queueText(std::to_string(this->nextPowerupTick));
 	text->setPos({ 0, 60 });
 	text = queueText(std::to_string(maf::random(500, 1500)));
 	text->setPos({ 0, 90 });
+	if (this->lmb)
+	{
+		MAABB box;
+		box.add({ 0, 0, 20, 20 });
+		particleManager.spawnCustom(new PBRParticle(600,
+			maf::fvec2{ (float)mousePos.x, (float)mousePos.y },
+			maf::fvec2{ maf::random(-10.0f, 10.0f),maf::random(-10.0f, 10.0f) },
+			"casing",
+			SDL_Rect{ 0, 0, 10, 30 },
+			0, 10, box));
+	}
 }
 
 void vbl::Game::updatePaused()
@@ -587,6 +636,7 @@ void vbl::Game::updateGame()
 		std::shared_ptr<vbl::Ball> ball = this->map.balls[i];
 		ball->setGravity(this->map.gravity);
 		ball->update(this->map.getGeometry(), this->map.actors, this->tick);
+		ball->trace(this->map.geometry, this->map.actors, 200, 4);
 		this->particleManager.addParticles(ball->getParticles());
 		this->sound.takeSounds(ball->getSounds());
 		if (ball->hitGuy() && ball->hitStrength() > 15)
@@ -606,6 +656,7 @@ void vbl::Game::updateGame()
 					appliesToTeam = true;
 				}
 				applyTeamPowerup(ball->team(), power, 600, !appliesToTeam);
+				this->spawnFadeUp(ball->team(), 60);
 				this->map.removeBall(&i);
 				continue;
 			}
@@ -624,7 +675,7 @@ void vbl::Game::updateGame()
 	processParticles();
 	for (const auto& team : this->teamData)
 	{
-		SpriteTexture* text = queueText(std::to_string(team.second.score));
+		std::shared_ptr<RawTexture> text = queueText(std::to_string(team.second.score));
 		text->setMiddle(team.second.scoreTextPos);
 		text->resize(4);
 	}
@@ -707,6 +758,10 @@ void vbl::Game::render()
 	for (const auto& guy : this->map.guys)
 	{
 		this->renderer.renderSpriteConst(guy->getTexture());
+		if (this->seeBoxes)
+		{
+			this->renderer.renderBoundingBox(guy->getBox(), { 0, 255, 0, 255 });
+		}
 		//this->renderer.renderBoundingBox(guy->getBox());
 		renderStatusEffects({guy->getPos().x - 4, guy->getPos().y - 4}, guy->getPowers());
 	}
@@ -724,12 +779,16 @@ void vbl::Game::render()
 			SpriteTexture tex("offscreen_arrow", { int(ball->getPos().x), 0, ballRect.w, ballRect.h }, 0);
 			this->renderer.renderSprite(tex);
 		}
+		if (this->seeBoxes)
+		{
+			this->renderer.renderBoundingBox(ball->getBox(), { 0, 0, 255, 255 });
+		}
 		//this->renderer.renderBoundingBox(ball->getBox());
 		if (this->state == GameState::STATE_WAITING_FOR_INPUT)
 		{
 			continue;
 		}
-		this->renderer.renderTrace(ball->trace(this->map.geometry, this->map.actors, 500, 1, 4), this->traceEndTexture);
+		this->renderer.renderTrace(ball->tracePoints, this->traceEndTexture);
 	}
 	if (this->state == GameState::STATE_WAITING_FOR_INPUT)
 	{
@@ -740,6 +799,17 @@ void vbl::Game::render()
 				continue;
 			}
 			this->renderer.renderSpriteConst(teamState.second.waitingSprite, 64);
+		}
+	}
+	if (this->seeBoxes)
+	{
+		const std::vector<GeometryBox>& boxes = this->map.geometry.getBoxes();
+		for (int i = 0; i < boxes.size(); i++)
+		{
+			if (boxes[i].trigger)
+			{
+				this->renderer.renderRect(boxes[i].box, this->changeTeam(boxes[i].team)->color);
+			}
 		}
 	}
 	this->renderText();
@@ -753,10 +823,31 @@ void vbl::Game::processParticles()
 
 void vbl::Game::renderParticles()
 {
-	const std::list<Particle>& particles = this->particleManager.getParticles();
+	const std::list<std::unique_ptr<vbl::Particle>>& particles = this->particleManager.getParticles();
 	for (const auto& p : particles)
 	{
-		this->renderer.renderSpriteConst(p.getTexture(), p.getAlpha());
+		this->renderer.renderSpriteConst(p->getTexture(), p->getAlpha());
+		if (seeBoxes)
+		{
+			if (p->type == PType::PBR)
+			{
+				PBRParticle* casted = reinterpret_cast<PBRParticle*>(p.get());
+				this->renderer.renderBoundingBox(casted->getHull());
+				if (casted->didx)
+				{
+					maf::frect rect = casted->getHull().getBoxes()[0];
+					rect.w /= 2;
+					this->renderer.renderRect(rect, { 0, 255, 255, 255 });
+				}
+				if (casted->didy)
+				{
+					maf::frect rect = casted->getHull().getBoxes()[0];
+					rect.w /= 2;
+					rect.x += rect.w;
+					this->renderer.renderRect(rect, { 255, 255, 0, 255 });
+				}
+			}
+		}
 	}
 }
 
@@ -817,18 +908,18 @@ void vbl::Game::loadEffectSprite(Ball::PowerupType effect, const std::string& pi
 	this->effectSpritesByType[idx] = picture;
 }
 
-vbl::SpriteTexture* vbl::Game::queueText(const std::string& str)
+std::shared_ptr<vbl::RawTexture> vbl::Game::queueText(const std::string& str)
 {
-	this->textToRender.push_back(this->renderer.renderTextIrresponsible(str));
-	return &this->textToRender[this->textToRender.size() - 1];
+	this->textToRender.push_back(this->renderer.makeText(str));
+	return this->textToRender[this->textToRender.size() - 1];
 }
 
 void vbl::Game::renderText()
 {
 	while (this->textToRender.size())
 	{
-		SpriteTexture& tex = this->textToRender[this->textToRender.size() - 1];
-		this->renderer.renderSprite(tex);
+		std::shared_ptr<RawTexture> tex = this->textToRender[this->textToRender.size() - 1];
+		this->renderer.renderText(tex);
 		this->textToRender.pop_back();
 	}
 }
@@ -854,4 +945,21 @@ void vbl::Game::cameraShake(float length, float amplitude)
 {
 	this->remainingShake = length;
 	this->shakeAmp = amplitude;
+}
+
+void vbl::Game::spawnFadeUp(uint16_t team, uint32_t duration)
+{
+	const std::vector<vbl::GeometryBox>& boxes = this->map.geometry.getBoxes();
+	for (const auto& box : boxes)
+	{
+		if (!box.trigger)
+		{
+			continue;
+		}
+		if (box.team != team)
+		{
+			continue;
+		}
+		this->particleManager.spawnParticle(duration, { box.box.x, box.box.y - box.box.h / 4 }, { 0,0 }, "white_gradient", { 0,0,(int)box.box.w, int(box.box.h * 1.25) }, 0, 0);
+	}
 }
