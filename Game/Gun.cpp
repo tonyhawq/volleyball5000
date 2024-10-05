@@ -1,13 +1,38 @@
 #include "Gun.h"
 
-vbl::Gun::Gun(strref picture, strref shoot_picture, strref bullet_picture, const std::vector<std::string>& casings, const std::vector<std::string>& firing_sounds, int ammo, float power)
-	:GameSprite({ 24, 24 }, picture, true), ammo(ammo), power(power), picture(picture), shoot_picture(shoot_picture), bullet_picture(bullet_picture), casing_pictures(casings), firing_sounds(firing_sounds)
+#include "Game.h"
+
+vbl::Gun::Gun(maf::fvec2 dim, strref picture, strref shoot_picture, strref bullet_picture, const std::vector<std::string>& casings, const std::vector<std::string>& firing_sounds, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset)
+	:GameSprite(dim, Picture{ picture }, true),
+	ammo(ammo),
+	power(power),
+	picture(picture),
+	shoot_picture(shoot_picture),
+	bullet_picture(bullet_picture),
+	casing_pictures(casings),
+	firing_sounds(firing_sounds),
+	offset(offset),
+	barrelOffset(barrelOffset)
 {
 
 }
 
-void vbl::Gun::shoot()
+void vbl::Gun::trigger(Game* world, float dir, int tick)
 {
+	if (tick < this->nextFireTick)
+	{
+		return;
+	}
+	this->nextFireTick = tick + this->firingDelay;
+	this->shoot(world);
+}
+
+void vbl::Gun::shoot(Game* world, float dir, int tick)
+{
+	if (tick >= 0)
+	{
+		this->nextFireTick = tick + this->firingDelay;
+	}
 	if (!ammo)
 	{
 		return;

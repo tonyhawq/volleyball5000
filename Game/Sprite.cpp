@@ -67,6 +67,14 @@ void vbl::Sprite::setPos(maf::fvec2 pos)
 	this->texture.setPos(pos);
 }
 
+void vbl::Sprite::setVisMid(maf::fvec2 pos)
+{
+	this->setPos({
+		pos.x - this->texture.dimensions().x / 2,
+		pos.y - this->texture.dimensions().y / 2,
+		});
+}
+
 void vbl::MAABB::move(maf::fvec2 vel)
 {
 	for (auto& box : boxes)

@@ -357,9 +357,9 @@ int vbl::Game::makeGuy(const std::string& name, const std::string& picture, maf:
 	return result;
 }
 
-vbl::Gun* vbl::Game::makeGun(strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power)
+vbl::Gun* vbl::Game::makeGun(maf::fvec2 dim, strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset)
 {
-	this->guns.insert(std::make_pair(name, Gun(picture, shoot_picture, bullet, casings, firing_noises, ammo, power)));
+	this->guns.insert(std::make_pair(name, Gun(dim, picture, shoot_picture, bullet, casings, firing_noises, ammo, power, offset, barrelOffset)));
 	Gun& got = guns.at(name);
 	got.cacheTexture(&this->renderer.atlas);
 	return &got;
@@ -640,10 +640,12 @@ void vbl::Game::updateGame()
 		guy->update(this->map.getGeometry(), this->tick);
 		this->particleManager.addParticles(guy->getParticles());
 		this->sound.takeSounds(guy->getSounds());
-		float toMouseDir = (float)maf::pointTowards(guy->getVisMid(), { (float)this->mousePos.x, (float)this->mousePos.y });
+		float toMouseDir = (float)maf::pointTowardsNC(guy->getVisMid(), { (float)this->mousePos.x, (float)this->mousePos.y });
 		if (guy->hasGun())
 		{
-			guy->gun()->setPos(maf::rotatePoint(guy->getVisMid() + maf::fvec2{50.0f, 0.0f}, guy->getVisMid(), toMouseDir));
+			Gun* gun = guy->gun();
+			gun->setVisMid(maf::rotatePoint(gun->offset, guy->getVisMid(), toMouseDir));
+			gun->setRotation(maf::radToDegrees(toMouseDir));
 		}
 	}
 	for (int i = 0; i < this->map.balls.size(); i++)
@@ -651,7 +653,7 @@ void vbl::Game::updateGame()
 		std::shared_ptr<vbl::Ball> ball = this->map.balls[i];
 		ball->setGravity(this->map.gravity);
 		ball->update(this->map.getGeometry(), this->map.actors, this->tick, 1.0f);
-		ball->trace(this->map.geometry, this->map.actors, 2000, 16);
+		ball->trace(this->map.geometry, this->map.actors, 200, 32);
 		this->particleManager.addParticles(ball->getParticles());
 		this->sound.takeSounds(ball->getSounds());
 		if (ball->hitGuy() && ball->hitStrength() > 15)

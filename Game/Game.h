@@ -114,7 +114,7 @@ namespace vbl
 		std::shared_ptr<vbl::Ball> makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture);
 		std::shared_ptr<vbl::Ball> makePowerupBall(const std::string& picture, const std::string& glowPicture, Ball::PowerupType power);
 
-		Gun* makeGun(strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power);
+		Gun* makeGun(maf::fvec2 dim, strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset);
 		const Gun* getGun(strref name);
 
 		void applyTeamPowerup(uint16_t team, Ball::PowerupType power, float length, bool onGuy = true);

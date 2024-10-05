@@ -4,21 +4,23 @@
 
 namespace vbl
 {
+	class Game;
+
 	class Gun : public GameSprite
 	{
 	public:
-		Gun(strref picture, strref shoot_picture, strref bullet_picture, const std::vector<std::string>& casings, const std::vector<std::string>& firing_sounds, int ammo, float power);
+		Gun(maf::fvec2 dim, strref picture, strref shoot_picture, strref bullet_picture, const std::vector<std::string>& casings, const std::vector<std::string>& firing_sounds, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset);
 		Gun(const Gun& other) = default;
 		Gun(Gun&&) = default;
 		// fuck std::unordered_map and std::unique_ptr
-		Gun& operator=(const Gun&)
-		{
-			return *this;
-		}
+		// i have changed my standing.
+		Gun& operator=(const Gun&) = default;
 
-		void shoot();
+		void trigger(Game* world, float dir, int tick);
+		void shoot(Game* world, float dir, int tick = -1);
 
-		inline Gun* clone() const { return new Gun(*this); };
+		maf::fvec2 offset;
+		maf::fvec2 barrelOffset;
 	private:
 		std::string picture;
 		std::string shoot_picture;
@@ -27,5 +29,7 @@ namespace vbl
 		std::vector<std::string> firing_sounds;
 		int ammo;
 		float power;
+		int firingDelay;
+		int nextFireTick;
 	};
 }

@@ -9,7 +9,7 @@ vbl::GameSprite::GameSprite(maf::fvec2 dimensions, const IDedPicture& picture, b
 }
 
 vbl::GameSprite::GameSprite(const GameSprite& other)
-	: Sprite(*this), particleMap(other.particleMap), soundMap(other.soundMap)
+	: Sprite(other), particleMap(other.particleMap), soundMap(other.soundMap)
 {
 	itype = AType::GameSprite;
 }

@@ -8,6 +8,13 @@
 
 int main(int args, char* argc[])
 {
+	vbl::GameSprite texture = vbl::GameSprite({ 0,0 }, "sigma.png", false);
+	printf("has %s\n", texture.getTexture().getPicture().picture.c_str());
+	vbl::GameSprite copied = texture;
+	printf("has %s\n", copied.getTexture().getPicture().picture.c_str());
+	vbl::GameSprite* cptr = new vbl::GameSprite(texture);
+	printf("has %s\n", cptr->getTexture().getPicture().picture.c_str());
+
 	BEGIN_DEBUG_LOG("current.log");
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	IMG_Init(IMG_INIT_PNG);
@@ -94,10 +101,12 @@ int main(int args, char* argc[])
 	size_t rejects = game.renderer.atlas.addBulk(paths).size();
 	LOG("Texture atlas finished loading.");
 	LOG_F("Loaded {}/{} textures. {}/{} of those loaded had names.", paths.size() - rejects, paths.size(), names.size(), paths.size());
-	game.makeGun("pistol", "blaster", "blaster_shoot", "bullet", { "casing" }, { "pistol_fire", "pistol_fire_2" }, 999, 10.0f);
+	vbl::Gun* pistol = game.makeGun({ 60, 60 }, "pistol", "blaster", "blaster_shoot", "bullet", { "casing" }, { "pistol_fire", "pistol_fire_2" }, 999, 10.0f, { 50.0f, 0.0f }, { 0 });
+	pistol->offset = { 50, 50 };
+	pistol->barrelOffset = pistol->offset + maf::fvec2{ (float)pistol->getTexture().dimensions().x / 2, (float)pistol->getTexture().dimensions().y / 2};
 	for (auto& guy : game.map.guys)
 	{
-		guy->giveGun(game.getGun("pistol")->clone());
+		guy->giveGun(new vbl::Gun(*game.getGun("pistol")));
 	}
 	game.run();
 	LOG("Goodbye.")

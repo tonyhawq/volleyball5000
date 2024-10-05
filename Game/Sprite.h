@@ -56,9 +56,11 @@ namespace vbl
 		inline void resize(float by) { this->textureBox.w = int((float)this->textureBox.w * by); this->textureBox.h = int((float)this->textureBox.h* by); }
 		inline void rotate(float degrees) { this->rotation += degrees; }
 		inline float getRotation() const { return this->rotation; }
+		inline void setRotation(float degrees) { this->rotation = degrees; }
 		inline void setMiddle(maf::ivec2 pos) { setPos({ pos.x - this->textureBox.w / 2, pos.y - this->textureBox.h / 2 }); }
 		inline maf::ivec2 getMiddle() const { return { this->textureBox.x + this->textureBox.w / 2,this->textureBox.y + this->textureBox.h / 2 }; }
 		inline maf::ivec2 feet() const { return { this->textureBox.x + this->textureBox.w / 2, this->textureBox.y + this->textureBox.h }; }
+		inline maf::ivec2 dimensions() const { return { this->textureBox.w, this->textureBox.h }; }
 
 		inline const SDL_Rect* getRect() const { return &textureBox; }
 		inline const IDedPicture& getPicture() const { return this->picture; }
@@ -97,10 +99,15 @@ namespace vbl
 
 		void move(maf::fvec2 much);
 		void setPos(maf::fvec2 pos);
+		void setVisMid(maf::fvec2 pos);
 		inline void setVel(maf::fvec2 vel) { this->vel = vel; }
 		inline maf::fvec2 getPos() const { return this->pos; }
 		inline maf::fvec2 getVel() const { return this->vel; }
 		inline maf::fvec2 getVisMid() const { return { (float)this->texture.getMiddle().x, (float)this->texture.getMiddle().y }; }
+
+		inline void rotate(float degrees) { this->texture.rotate(degrees); }
+		inline void setRotation(float degrees) { this->texture.setRotation(degrees); }
+		inline float getRotation() { this->texture.getRotation(); }
 
 		inline const SpriteTexture& getTexture() const { return this->texture; }
 		inline SpriteTexture& getTextureNC() { return this->texture; }

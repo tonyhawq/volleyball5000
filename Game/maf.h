@@ -16,6 +16,8 @@ namespace maf
 		return degrees * pi_over_oneeighty;
 	}
 
+	struct fvec2;
+
 	struct ivec2
 	{
 		int x = 0, y = 0;
@@ -23,6 +25,7 @@ namespace maf
 		{
 			return { this->x + other.x, this->y + other.y };
 		}
+		operator fvec2();
 	};
 	struct fvec2
 	{
@@ -34,13 +37,17 @@ namespace maf
 			p.y = (int)this->y;
 			return p;
 		}
+		fvec2 operator/ (const float& other)
+		{
+			return { this->x / other, this->y / other };
+		}
 		fvec2 operator+ (const fvec2& other)
 		{
 			return { this->x + other.x, this->y + other.y };
 		}
 		fvec2 operator- (const fvec2& other)
 		{
-			return { this->x - other.y, this->y - other.y };
+			return { this->x - other.x, this->y - other.y };
 		}
 		fvec2 operator- ()
 		{
@@ -119,9 +126,14 @@ namespace maf
 		return { sign(in.x), sign(in.y) };
 	}
 
+	inline double pointTowardsNC(maf::fvec2 from, maf::fvec2 to)
+	{
+		return std::atan2(to.y - from.y, to.x - from.x);
+	}
+
 	inline double pointTowards(maf::fvec2 from, maf::fvec2 to)
 	{
-		return (std::atan2(to.y - from.y, to.x - from.x) + 1.57079632679);
+		return (pointTowardsNC(from, to) + 1.57079632679);
 	}
 
 	inline fvec2 setMiddle(maf::fvec2 pos, maf::fvec2 dim)
@@ -135,11 +147,11 @@ namespace maf
 
 	inline fvec2 rotatePoint(maf::fvec2 point, float angle)
 	{
-		return { point.x * std::cos(angle) - point.y * std::sin(angle), point.y * std::cos(angle) + point.y * std::sin(angle) };
+		return { point.x * std::cos(angle) - point.y * std::sin(angle), point.y * std::cos(angle) + point.x * std::sin(angle) };
 	}
 
 	inline fvec2 rotatePoint(maf::fvec2 point, maf::fvec2 about, float angle)
 	{
-		return rotatePoint(point - about, angle) + about;
+		return rotatePoint(point, angle) + about;
 	}
 }
