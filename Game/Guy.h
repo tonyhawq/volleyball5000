@@ -80,7 +80,7 @@ namespace vbl
 			float remaining;
 		};
 
-		Guy(const std::string& name, float diameter, const std::string& picture, Controller* controller = NULL);
+		Guy(const std::string& name, float diameter, const Picture& picture, Controller* controller = NULL);
 
 		void link(Controller* controller);
 
@@ -110,12 +110,14 @@ namespace vbl
 		inline const Controller* getController() const { return this->controller; }
 		inline Controller* changeController() { return this->controller; }
 
+		void deleteGun();
 		inline Gun* gun() { return this->firearm; }
-		inline bool hasGun() const { return (!!firearm); }
+		inline bool hasGun() const { return firearm; }
+		void giveGun(Gun* gun);
 	private:
 		std::vector<uint32_t> cached_res;
 
-		Gun* firearm;
+		Gun* firearm = NULL;
 
 		std::vector<Powerup> powers;
 

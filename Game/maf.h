@@ -19,13 +19,6 @@ namespace maf
 	struct ivec2
 	{
 		int x = 0, y = 0;
-		/*operator fvec2()
-		{
-			fvec2 p;
-			p.x = this->x;
-			p.y = this->y;
-			return p;
-		}*/
 		ivec2 operator+ (const ivec2& other)
 		{
 			return { this->x + other.x, this->y + other.y };
@@ -44,6 +37,10 @@ namespace maf
 		fvec2 operator+ (const fvec2& other)
 		{
 			return { this->x + other.x, this->y + other.y };
+		}
+		fvec2 operator- (const fvec2& other)
+		{
+			return { this->x - other.y, this->y - other.y };
 		}
 		fvec2 operator- ()
 		{
@@ -134,5 +131,15 @@ namespace maf
 			pos.x - dim.x / 2,
 			pos.y - dim.y / 2
 		};
+	}
+
+	inline fvec2 rotatePoint(maf::fvec2 point, float angle)
+	{
+		return { point.x * std::cos(angle) - point.y * std::sin(angle), point.y * std::cos(angle) + point.y * std::sin(angle) };
+	}
+
+	inline fvec2 rotatePoint(maf::fvec2 point, maf::fvec2 about, float angle)
+	{
+		return rotatePoint(point - about, angle) + about;
 	}
 }

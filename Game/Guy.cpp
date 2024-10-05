@@ -119,9 +119,10 @@ vbl::MAABB vbl::Guy::makeCircle(float diameter)
 		});
 }
 
-vbl::Guy::Guy(const std::string& name, float diameter, const std::string& picture, Controller* controller)
+vbl::Guy::Guy(const std::string& name, float diameter, const Picture& picture, Controller* controller)
 	: GameSprite({ diameter, diameter }, picture)
 {
+	this->itype = AType::Guy;
 	this->name = name;
 	if (controller)
 	{
@@ -427,4 +428,20 @@ void vbl::Guy::powerup(Ball::PowerupType powerup, float duration)
 	applyPower(powerup);
 }
 
+void vbl::Guy::deleteGun()
+{
+	if (this->hasGun())
+	{
+		delete this->firearm;
+	}
+}
 
+void vbl::Guy::giveGun(Gun* gun)
+{
+	this->deleteGun();
+	if (!gun)
+	{
+		return;
+	}
+	this->firearm = gun;
+}

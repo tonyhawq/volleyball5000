@@ -1,13 +1,15 @@
 #include "Ball.h"
 
-vbl::Ball::Ball(const std::string& picture, const std::string& glowPicture, float diameter)
-	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowPicture)
+#include "Guy.h"
+
+vbl::Ball::Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter)
+	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowPicture, SDL_Rect{0, 0, (int)diameter, (int)diameter}, 0)
 {
-	
+
 }
 
-vbl::Ball::Ball(const std::string& picture, const std::string& glowPicture, float diameter, PowerupType powerup)
-	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), powerup(powerup), glowTexture(glowPicture)
+vbl::Ball::Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter, PowerupType powerup)
+	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), powerup(powerup), glowTexture(glowPicture, SDL_Rect{ 0, 0, (int)diameter, (int)diameter }, 0)
 {
 
 }
@@ -73,19 +75,28 @@ void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::S
 	int loops = 25;
 	maf::fvec2 antithesis = { -std::sin(guyDir), std::cos(guyDir) };
 	bool hitGeo = false;
+	uint16_t team = 0;
+	if (sprite->type() == AType::Guy)
+	{
+		Guy* casted = reinterpret_cast<Guy*>(sprite.get());
+		if (casted->getController())
+		{
+			team = casted->getController()->getTeam();
+		}
+	}
 	while (loops > 0 && this->box.collide(sprite->getBox()))
 	{
 		hitGeo = false;
 		loops--;
 		sprite->move({ antithesis.x, 0 });
-		if (geometry.collidesNotrigger(sprite->getBox()))
+		if (geometry.collidesNotriggerTeamed(sprite->getBox(), team))
 		{
 			antithesis.x = -antithesis.x;
 			sprite->move({ antithesis.x, 0 });
 			hitGeo = true;
 		}
 		sprite->move({ 0, antithesis.y });
-		if (geometry.collidesNotrigger(sprite->getBox()))
+		if (geometry.collidesNotriggerTeamed(sprite->getBox(), team))
 		{
 			antithesis.y = -antithesis.y;
 			sprite->move({ 0, antithesis.y });

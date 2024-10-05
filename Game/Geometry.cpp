@@ -47,7 +47,7 @@ bool vbl::Geometry::collides(const MAABB& other) const
 	return false;
 }
 
-bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
+bool vbl::Geometry::collidesNotriggerTeamed(const MAABB& other, uint16_t team) const
 {
 	for (const auto& a : boxes)
 	{
@@ -55,7 +55,7 @@ bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
 		{
 			continue;
 		}
-		if (a.team)
+		if (a.team && a.team != team)
 		{
 			continue;
 		}
@@ -68,6 +68,11 @@ bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
 		}
 	}
 	return false;
+}
+
+bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
+{
+	return collidesNotriggerTeamed(other, 0);
 }
 
 std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const

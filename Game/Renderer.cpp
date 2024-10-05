@@ -102,16 +102,17 @@ void vbl::Renderer::presentFrame()
 void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha)
 {
 	SDL_Rect clipping{};
-	if (sprite.cachedID == SpriteTexture::INVALID_CACHED)
+	if (sprite.getPicture().id == Atlas::INVALID_CACHED)
 	{
-		clipping = this->atlas.get(sprite.getPicture());
+		clipping = this->atlas.get(sprite.getPicture().picture);
 	}
 	else
 	{
-		clipping = this->atlas.get(sprite.cachedID);
+		clipping = this->atlas.get(sprite.getPicture().picture);
 	}
 	if (clipping.w == 0 || clipping.h == 0)
 	{
+		printf("could not render %s (%zu)\n", sprite.getPicture().picture.c_str(), sprite.getPicture().id);
 		DEBUG_LOG_F("Rendering sprite texture with picture {} failed. Atlas likely does not have {} registered.", sprite.getPicture(), sprite.getPicture());
 	}
 	//DEBUG_LOG_F("{}, {} {}x{}", clipping.x, clipping.y, clipping.w, clipping.h);
@@ -147,9 +148,9 @@ void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha
 
 void vbl::Renderer::renderSprite(SpriteTexture& sprite, uint8_t alpha)
 {
-	if (sprite.cachedID == SpriteTexture::INVALID_CACHED)
+	if (sprite.getPicture().id == Atlas::INVALID_CACHED)
 	{
-		this->atlas.get(sprite.getPicture(), sprite.cachedID);
+		this->atlas.get(sprite.changePicture().picture, sprite.changePicture().id);
 	}
 	renderSpriteConst(sprite, alpha);
 }

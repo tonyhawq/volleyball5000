@@ -205,10 +205,12 @@ void vbl::Map::clearBalls()
 }
 
 vbl::Game::Game(uint32_t width, uint32_t height, float scale)
-	:renderer(width, height, 2048, 2048, scale), sound(10), nextPowerupTick(0)
+	:renderer(width, height, 2048, 2048, scale), sound(10), nextPowerupTick(0), traceEndTexture("NO_ASSIGN", { 0 }, 0.0f)
 {
 	this->renderer.setMissingTexture("missing.png");
-	this->traceEndTexture = SpriteTexture("trace_end", { 0,0,44,44 }, 0);
+	Picture pic{ "trace_end" };
+	this->traceEndTexture = SpriteTexture(pic, { 0,0,44,44 }, 0);
+	this->traceEndTexture.cache(&this->renderer.atlas);
 	this->particleManager.game = this;
 }
 
@@ -224,7 +226,7 @@ int vbl::Map::addGuy(const std::string& name, const std::string& picture, maf::i
 		return 1;
 	}
 	guyMap[name] = guys.size();
-	guys.push_back(std::make_shared<Guy>(name, 80, picture));
+	guys.push_back(std::make_shared<Guy>(name, 80, Picture{ picture }));
 	std::shared_ptr<Guy> guy = guys[guys.size() - 1];
 	guy->changeTexture().setPicture(picture);
 	guy->changeTexture().setSpriteWidth(spriteDim.x);
@@ -244,7 +246,8 @@ std::shared_ptr<vbl::Guy> vbl::Map::getGuy(const std::string& name)
 
 std::shared_ptr<vbl::Ball> vbl::Map::addBall(const std::string& picture, const std::string& glowPicture)
 {
-	balls.push_back(std::make_shared<Ball>(picture, glowPicture, 80));
+	printf("%s making %s\n", __FUNCTION__, picture.c_str());
+	balls.push_back(std::make_shared<Ball>(Picture{ picture }, glowPicture, 80));
 	std::shared_ptr<Ball> ball = balls[balls.size() - 1];
 	ball->reset(this->ballSpawnCooldown);
 	ball->setPos(this->ballSpawnPoint);
@@ -347,18 +350,38 @@ int vbl::Game::makeGuy(const std::string& name, const std::string& picture, maf:
 	{
 		std::shared_ptr<vbl::Guy> guy = map.getGuy(name);
 		guy->changeTexture().setAnimated(true);
-		guy->setParticle("grd", "ground_particle");
-		guy->setParticle("air", "air_particle");
+		guy->setParticle("grd", "ground_particle", &this->renderer.atlas);
+		guy->setParticle("air", "air_particle", &this->renderer.atlas);
+		guy->cacheTexture(&this->renderer.atlas);
 	}
 	return result;
 }
 
+vbl::Gun* vbl::Game::makeGun(strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power)
+{
+	this->guns.insert(std::make_pair(name, Gun(picture, shoot_picture, bullet, casings, firing_noises, ammo, power)));
+	Gun& got = guns.at(name);
+	got.cacheTexture(&this->renderer.atlas);
+	return &got;
+}
+
+const vbl::Gun* vbl::Game::getGun(strref name)
+{
+	if (!this->guns.count(name))
+	{
+		return NULL;
+	}
+	return &this->guns.at(name);
+}
+
 std::shared_ptr<vbl::Ball> vbl::Game::makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture)
 {
+	printf("%s making %s\n", __FUNCTION__, picture.c_str());
 	std::shared_ptr<vbl::Ball> ball = map.addBall(picture, glowPicture);
 	ball->setParticle("cld", "ball_particle");
 	ball->setParticle("bnk", "boink");
 	ball->setSound("boink", this->sound.getID("boink"));
+	ball->cacheTexture(&this->renderer.atlas);
 	Particle* particle = this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, "glow", {0, 0, 256, 256}, 0, 0);
 	particle->changeTexture().usesSpecialBlendmode = true;
 	particle->changeTexture().specialBlendingMode = SDL_BLENDMODE_ADD;
@@ -473,26 +496,14 @@ void vbl::Game::run()
 	{
 		timer.set();
 		FLUSH_LOG();
-		try
+		this->update();
+		this->updateTime = timer.time();
+		this->render();
+		this->frameTime = timer.time();
+		this->renderTime = this->frameTime - this->updateTime;
+		if (this->frameTime < 15)
 		{
-			this->update();
-			this->updateTime = timer.time();
-			this->render();
-			this->frameTime = timer.time();
-			this->renderTime = this->frameTime - this->updateTime;
-			if (this->frameTime < 15)
-			{
-				SDL_Delay(15 - (Uint32)this->frameTime);
-			}
-		}
-		catch (const std::bad_alloc& e)
-		{
-			LOG_WARN("Caught and silenced BAD_ALLOC");
-			printf("fatal error.\n");
-		}
-		catch (...)
-		{
-			LOG_WARN("Caught and silenced exception");
+			SDL_Delay(15 - (Uint32)this->frameTime);
 		}
 		printf("update %fms\n", this->updateTime);
 		printf("render %fms\n", this->renderTime);
@@ -561,7 +572,6 @@ void vbl::Game::input()
 			break;
 		}
 	}
-	maf::ivec2 mousePos{};
 	SDL_GetMouseState(&mousePos.x, &mousePos.y);
 	std::shared_ptr<RawTexture> mousePosText = queueText(std::to_string(mousePos.x) + ", " + std::to_string(mousePos.y));
 	mousePosText->setPos(mousePos);
@@ -630,6 +640,11 @@ void vbl::Game::updateGame()
 		guy->update(this->map.getGeometry(), this->tick);
 		this->particleManager.addParticles(guy->getParticles());
 		this->sound.takeSounds(guy->getSounds());
+		float toMouseDir = (float)maf::pointTowards(guy->getVisMid(), { (float)this->mousePos.x, (float)this->mousePos.y });
+		if (guy->hasGun())
+		{
+			guy->gun()->setPos(maf::rotatePoint(guy->getVisMid() + maf::fvec2{50.0f, 0.0f}, guy->getVisMid(), toMouseDir));
+		}
 	}
 	for (int i = 0; i < this->map.balls.size(); i++)
 	{
@@ -759,23 +774,30 @@ void vbl::Game::render()
 	}
 	this->renderer.renderGeometry(this->map.geometry);
 	renderParticles();
-	for (const auto& guy : this->map.guys)
+	for (auto& guy : this->map.guys)
 	{
 		this->renderer.renderSpriteConst(guy->getTexture());
+		if (guy->hasGun())
+		{
+			this->renderer.renderSpriteConst(guy->gun()->getTexture());
+		}
 		if (this->seeBoxes)
 		{
 			this->renderer.renderBoundingBox(guy->getBox(), { 0, 255, 0, 255 });
+			if (guy->hasGun())
+			{
+				this->renderer.renderBoundingBox(guy->gun()->getBox(), { 0, 255, 0, 255 });
+			}
 		}
 		//this->renderer.renderBoundingBox(guy->getBox());
 		renderStatusEffects({guy->getPos().x - 4, guy->getPos().y - 4}, guy->getPowers());
 	}
-	for (const auto& ball : this->map.balls)
+	for (auto& ball : this->map.balls)
 	{
 		this->renderer.renderSpriteConst(ball->getTexture());
 		if (ball->getGlow())
 		{
-			SpriteTexture tex(ball->getGlowTex(), *ball->getTexture().getRect(), 0.0f);
-			this->renderer.renderSprite(tex, ball->getGlow());
+			this->renderer.renderSpriteConst(ball->getGlowTex(), ball->getGlow());
 		}
 		if (ball->getVisMid().y < 0)
 		{

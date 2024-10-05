@@ -70,7 +70,15 @@ namespace vbl
 	public:
 		struct TeamData
 		{
-			SpriteTexture waitingSprite;
+			TeamData()
+			{
+				printf("constructing TeamData\n");
+			};
+			~TeamData()
+			{
+				printf("destructing TeamData\n");
+			};
+			SpriteTexture waitingSprite = SpriteTexture(Picture{ "NO_ASSIGN" }, {0}, 0);
 			bool ready = false;
 			int score = 0;
 			maf::ivec2 scoreTextPos = { 0,0 };
@@ -106,9 +114,12 @@ namespace vbl
 		std::shared_ptr<vbl::Ball> makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture);
 		std::shared_ptr<vbl::Ball> makePowerupBall(const std::string& picture, const std::string& glowPicture, Ball::PowerupType power);
 
+		Gun* makeGun(strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power);
+		const Gun* getGun(strref name);
+
 		void applyTeamPowerup(uint16_t team, Ball::PowerupType power, float length, bool onGuy = true);
 		void spawnRandomPowerup();
-		inline void selectNextPowerupTick() { this->nextPowerupTick = this->tick + maf::random(500, 1000); }
+		inline void selectNextPowerupTick() { this->nextPowerupTick = this->tick + maf::random(1*60, 2*60); }
 		void score(uint16_t team, int amount = 1);
 		void clearPowerups();
 
@@ -140,6 +151,7 @@ namespace vbl
 			STATE_SCORED,
 		};
 	//private:
+		maf::ivec2 mousePos;
 		bool lmb = false;
 		bool rmb = false;
 		bool seeBoxes = false;
@@ -168,5 +180,6 @@ namespace vbl
 		float shakeAmp = 0;
 		uint32_t nextPowerupTick;
 		Timer timer;
+		std::unordered_map<std::string, Gun> guns;
 	};
 }

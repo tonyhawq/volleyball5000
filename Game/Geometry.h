@@ -37,6 +37,7 @@ namespace vbl
 
 		bool collides(const MAABB& other) const;
 		bool collidesNotrigger(const MAABB& other) const;
+		bool collidesNotriggerTeamed(const MAABB& other, uint16_t team) const;
 		void collidesWithResNoalloc(const MAABB& other, std::vector<uint32_t>& vec) const;
 		const std::vector<uint32_t>& collidesWithResSelfNoalloc(const MAABB& other);
 		std::vector<uint32_t> collidesWithRes(const MAABB& other) const;

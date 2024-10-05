@@ -5,7 +5,7 @@
 #include "random.h"
 #include "Game.h"
 
-vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture , SDL_Rect box, float rotation, float rotationSpeed)
+vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture , SDL_Rect box, float rotation, float rotationSpeed)
 	:lifespan(lifespan), pos(pos), vel(vel), texture(picture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan), type(PType::Basic)
 {
 	this->texture.setPos(this->pos);
@@ -28,7 +28,7 @@ void vbl::Particle::update()
 	this->texture.setPos(this->pos);
 }
 
-vbl::PBRParticle::PBRParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, const MAABB& hull)
+vbl::PBRParticle::PBRParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, const MAABB& hull)
 	:Particle(lifespan, pos, vel, picture, box, rotation, rotationSpeed), hull(hull)
 {
 	this->type = PType::PBR;
@@ -73,7 +73,7 @@ void vbl::PBRParticle::update(Game* game)
 	this->hull.setPos(this->pos);
 }
 
-vbl::Particle* vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed)
+vbl::Particle* vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed)
 {
 	particles.push_front(std::move(std::make_unique<Particle>(lifespan, pos, vel, picture, box, rotation, rotationSpeed)));
 	return particles.front().get();
@@ -81,10 +81,10 @@ vbl::Particle* vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2
 
 void vbl::ParticleManager::spawnCustom(Particle* particle)
 {
-	particles.push_front(std::unique_ptr<Particle>(particle));
+	particles.push_front(std::move(std::unique_ptr<Particle>(particle)));
 }
 
-void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
+void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
 {
 	for (uint32_t i = 0; i < variations; i++)
 	{

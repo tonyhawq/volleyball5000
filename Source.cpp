@@ -88,11 +88,17 @@ int main(int args, char* argc[])
 		pair_str_t{ "content/graphics/waiting_right.png", "waiting_right"},
 		pair_str_t{ "content/graphics/white_gradient.png", "white_gradient"},
 		pair_str_t{ "content/graphics/pointer.png", "point"},
-		pair_str_t{ "content/graphics/casing.png", "casing"}
+		pair_str_t{ "content/graphics/casing.png", "casing"},
+		pair_str_t{ "content/graphics/blaster.png", "blaster"},
 	};
 	size_t rejects = game.renderer.atlas.addBulk(paths).size();
 	LOG("Texture atlas finished loading.");
 	LOG_F("Loaded {}/{} textures. {}/{} of those loaded had names.", paths.size() - rejects, paths.size(), names.size(), paths.size());
+	game.makeGun("pistol", "blaster", "blaster_shoot", "bullet", { "casing" }, { "pistol_fire", "pistol_fire_2" }, 999, 10.0f);
+	for (auto& guy : game.map.guys)
+	{
+		guy->giveGun(game.getGun("pistol")->clone());
+	}
 	game.run();
 	LOG("Goodbye.")
 	END_DEBUG_LOG();

@@ -4,6 +4,41 @@
 
 #include "GDebug/logtools.h"
 
+IDedPicture::IDedPicture(const std::string& picture, size_t id)
+	:picture(picture), id(id) {}
+
+IDedPicture::IDedPicture(const std::string& picture)
+	:picture(picture), id(Atlas::INVALID_CACHED) {}
+
+IDedPicture::IDedPicture(const char* c_str)
+	:picture(c_str), id(Atlas::INVALID_CACHED) {}
+
+IDedPicture::IDedPicture()
+	:picture(), id(Atlas::INVALID_CACHED)
+{}
+
+IDedPicture::IDedPicture(const IDedPicture& other)
+	:picture(), id()
+{
+	this->picture = other.picture;
+	this->id = other.id;
+}
+
+IDedPicture::IDedPicture(IDedPicture&& other) noexcept
+{
+	this->picture = std::move(other.picture);
+	this->id = other.id;
+}
+
+IDedPicture Atlas::create(const std::string& name)
+{
+	IDedPicture pic = { name, Atlas::INVALID_CACHED };
+	this->get(pic.picture, pic.id);
+	return pic;
+}
+
+size_t Atlas::INVALID_CACHED = SIZE_MAX;
+
 Atlas::Atlas(int w, int h)
 	:surf(NULL), texture(NULL), lastUsed(NULL)
 {
@@ -141,7 +176,7 @@ int Atlas::add(std::string path, std::string name)
 }
 
 
-SDL_Rect Atlas::get(size_t i)
+SDL_Rect Atlas::get(size_t i) const
 {
 	if (i >= this->clippingRects.size() || i < 0)
 	{
@@ -152,7 +187,7 @@ SDL_Rect Atlas::get(size_t i)
 	return this->clippingRects[i];
 }
 
-SDL_Rect Atlas::get(const std::string& name)
+SDL_Rect Atlas::get(const std::string& name) const
 {
 	if (!this->indexMap.count(name))
 	{
@@ -160,17 +195,17 @@ SDL_Rect Atlas::get(const std::string& name)
 		return { 0 };
 	}
 	DEBUG_LOG_F("ATLAS: getting rect for {} and discarding it's id.", name);
-	return this->clippingRects[this->indexMap[name]];
+	return this->clippingRects[this->indexMap.at(name)];
 }
 
-SDL_Rect Atlas::get(const std::string& name, size_t& i)
+SDL_Rect Atlas::get(const std::string& name, size_t& i) const
 {
 	if (!this->indexMap.count(name))
 	{
 		DEBUG_LOG_F("No rect exists with name {}.", name);
 		return { 0 };
 	}
-	i = this->indexMap[name];
+	i = this->indexMap.at(name);
 	DEBUG_LOG_F("ATLAS: getting rect for {} and caching id as {}.", name, i);
 	return this->clippingRects[i];
 }
