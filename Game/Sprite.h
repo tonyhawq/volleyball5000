@@ -12,6 +12,8 @@ namespace vbl
 	{
 	public:
 		MAABB(const std::vector<maf::frect>& rects);
+		MAABB(maf::frect rect);
+		MAABB(maf::fvec2 pos, float resolution = 1.0f);
 		MAABB();
 
 		void setPos(maf::fvec2 pos);

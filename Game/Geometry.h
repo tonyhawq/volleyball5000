@@ -37,7 +37,8 @@ namespace vbl
 
 		bool collides(const MAABB& other) const;
 		bool collidesNotrigger(const MAABB& other) const;
-		std::vector<uint32_t> collidesWithRes(const MAABB& other) const;
+		std::vector<uint32_t> collidesWithIndicies(const MAABB& other) const;
+		std::vector<vbl::GeometryBox> collidesWithBoxes(const MAABB& other) const;
 	private:
 		std::vector<GeometryBox> boxes;
 		std::vector<ColoredRect> rects;

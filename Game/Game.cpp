@@ -504,7 +504,7 @@ void vbl::Game::input()
 {
 	for (auto& c : controllers)
 	{
-		c->update();
+		c->update(this);
 	}
 	SDL_Event e;
 	while (SDL_PollEvent(&e))

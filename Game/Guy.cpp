@@ -36,7 +36,7 @@ void vbl::Controller::marry(AI* wife)
 	this->controlledBy = wife;
 }
 
-void vbl::Controller::update()
+void vbl::Controller::update(Game* game)
 {
 	if (jumpQueuedown > 0)
 	{
@@ -46,18 +46,43 @@ void vbl::Controller::update()
 	{
 		dashQueuedown--;
 	}
+	if (this->controlledBy)
+	{
+		this->controlledBy->input(game);
+	}
 }
 
 bool vbl::Controller::keyDown(int key)
 {
 	InputIDX in = keymap[key];
-	if (in == InputIDX::INPUT_NONE)
+	return this->setInput(in, true);
+}
+
+bool vbl::Controller::setInput(vbl::Controller::InputIDX input, bool value)
+{
+	if (input == InputIDX::INPUT_NONE)
 	{
 		return false;
 	}
-	this->hadInput = true;
-	this->inputs[(int)in] = true;
-	switch (in)
+	if (input == InputIDX::INPUT_ALL)
+	{
+		if (value)
+		{
+			this->inputs.set();
+		}
+		else
+		{
+			this->inputs.reset();
+		}
+		return true;
+	}
+	this->hadInput = value;
+	this->inputs[(int)input] = value;
+	if (!value)
+	{
+		return true;
+	}
+	switch (input)
 	{
 	case InputIDX::INPUT_UP:
 		queueJump();
@@ -238,7 +263,7 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 	while (increment > 0)
 	{
 		this->move({ this->vel.x / steps, 0 });
-		std::vector<uint32_t> xres = geometry.collidesWithRes(this->box);
+		std::vector<uint32_t> xres = geometry.collidesWithIndicies(this->box);
 		for (const auto res : xres)
 		{
 			if (collidesWithGeometryBox(geometry.get(res)))
@@ -251,7 +276,7 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 			}
 		}
 		this->move({ 0, this->vel.y / steps });
-		std::vector<uint32_t> yres = geometry.collidesWithRes(this->box);
+		std::vector<uint32_t> yres = geometry.collidesWithIndicies(this->box);
 		for (const auto res : yres)
 		{
 			if (collidesWithGeometryBox(geometry.get(res)))

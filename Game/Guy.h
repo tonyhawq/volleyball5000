@@ -14,27 +14,32 @@
 namespace vbl
 {
 	class AI;
+	class Game;
 	class Controller
 	{
 	public:
+		enum class InputIDX
+		{
+			INPUT_NONE = 0,
+			INPUT_LEFT,
+			INPUT_RIGHT,
+			INPUT_UP,
+			INPUT_DOWN,
+			INPUT_DASH,
+			INPUT_ALL,
+		};
+
 		Controller(const std::string& name, uint16_t team);
 		~Controller();
 
 		inline void reset() { this->hadInput = false; }
-		void update();
+		void update(Game* game);
 
 		bool keyDown(int key);
 		bool keyUp(int key);
+		bool setInput(vbl::Controller::InputIDX input, bool value);
 
-		enum class InputIDX
-		{
-			INPUT_NONE  = 0,
-			INPUT_LEFT  = 1,
-			INPUT_RIGHT = 2,
-			INPUT_UP    = 3,
-			INPUT_DOWN  = 4,
-			INPUT_DASH  = 5,
-		};
+
 
 		inline void queueJump() { jumpQueuedown = 10; }
 		inline void queueDash() { dashQueuedown = 10; }

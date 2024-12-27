@@ -137,7 +137,7 @@ void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<st
 	while (increment > 0)
 	{
 		this->move({ this->vel.x / steps, 0 });
-		std::vector<uint32_t> res = geometry.collidesWithRes(this->box);
+		std::vector<uint32_t> res = geometry.collidesWithIndicies(this->box);
 		for (const auto result : res)
 		{
 			const GeometryBox* box = geometry.get(result);
@@ -160,7 +160,7 @@ void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<st
 			this->trigger(box);
 		}
 		this->move({ 0, this->vel.y / steps });
-		res = geometry.collidesWithRes(this->box);
+		res = geometry.collidesWithIndicies(this->box);
 		for (const auto result : res)
 		{
 			const GeometryBox* box = geometry.get(result);
@@ -221,9 +221,11 @@ void vbl::Ball::reset(uint32_t spawnTime)
 	this->texture.rotate(-this->texture.getRotation());
 	this->spawnTime = spawnTime;
 	this->spawning = spawnTime;
+	this->wasTriggered = false;
+	this->triggeredTeam = 0;
 }
 
-const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit)
+const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit, maf::fvec2* ended_pos)
 {
 	tracePoints.clear();
 	uint32_t lastSpawning = this->spawning;
@@ -231,7 +233,9 @@ const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const 
 	maf::fvec2 startingVel = this->vel;
 	float rot = this->texture.getRotation();
 	int bounces = 0;
-	while (length > 0 && bounces < bounceLimit)
+	bool prevTriggerState = this->wasTriggered;
+	uint16_t prevTriggerTeam = this->triggeredTeam;
+	while (length > 0 && bounces <= bounceLimit)
 	{
 		update(geometry, actors, 0, true);
 		if (bounced)
@@ -248,10 +252,16 @@ const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const 
 		}
 		length--;
 	}
+	if (ended_pos)
+	{
+		*ended_pos = this->getPos();
+	}
 	this->texture.rotate(rot - this->texture.getRotation());
 	this->setPos(startingPos);
 	this->setVel(startingVel);
 	this->spawning = lastSpawning;
+	this->wasTriggered = prevTriggerState;
+	this->triggeredTeam = prevTriggerTeam;
 	return this->tracePoints;
 }
 

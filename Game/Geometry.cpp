@@ -70,7 +70,7 @@ bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
 	return false;
 }
 
-std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const
+std::vector<uint32_t> vbl::Geometry::collidesWithIndicies(const MAABB& other) const
 {
 	std::vector<uint32_t> indicies;
 	indicies.reserve(this->boxes.size());
@@ -86,4 +86,22 @@ std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const
 		}
 	}
 	return indicies;
+}
+
+std::vector<vbl::GeometryBox> vbl::Geometry::collidesWithBoxes(const MAABB& other) const
+{
+	std::vector<vbl::GeometryBox> collidedWith;
+	collidedWith.reserve(this->boxes.size());
+	const std::vector<maf::frect> boxes = other.getBoxes();
+	for (uint32_t i = 0; i < this->boxes.size(); i++)
+	{
+		for (uint32_t j = 0; j < boxes.size(); j++)
+		{
+			if (maf::collides(this->boxes[i].box, boxes[j]))
+			{
+				collidedWith.push_back(this->boxes[i]);
+			}
+		}
+	}
+	return collidedWith;
 }
