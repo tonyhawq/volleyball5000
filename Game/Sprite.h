@@ -11,9 +11,12 @@ namespace vbl
 {
 	enum class AType
 	{
-		Sprite = 0,
+		None = 0,
+		Sprite,
+		Actor,
 		GameSprite,
 		Guy,
+		Ball,
 	};
 
 	class MAABB

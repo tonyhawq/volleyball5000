@@ -2,16 +2,38 @@
 
 #include "Atlas.h"
 
+vbl::Actor::Actor(maf::fvec2 dimensions, const IDedPicture& picture, bool useDimensionsForBox)
+	:Sprite(dimensions, picture, useDimensionsForBox)
+{
+	itype = AType::Actor;
+}
+
+vbl::Actor::Actor(const Actor& other)
+	:Sprite(other)
+{
+	itype = AType::Actor;
+}
+
+void vbl::Actor::update(Game* game)
+{
+	this->move(this->vel);
+}
+
 vbl::GameSprite::GameSprite(maf::fvec2 dimensions, const IDedPicture& picture, bool useDimensionsForBox)
-	: Sprite(dimensions, picture, useDimensionsForBox)
+	: Actor(dimensions, picture, useDimensionsForBox)
 {
 	itype = AType::GameSprite;
 }
 
 vbl::GameSprite::GameSprite(const GameSprite& other)
-	: Sprite(other), particleMap(other.particleMap), soundMap(other.soundMap)
+	: Actor(other), particleMap(other.particleMap), soundMap(other.soundMap)
 {
 	itype = AType::GameSprite;
+}
+
+void vbl::GameSprite::update(Game* game)
+{
+	this->move(this->vel);
 }
 
 void vbl::GameSprite::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, float var)

@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <memory>
 
 #include "Sprite.h"
 #include "Particles.h"
@@ -12,13 +13,28 @@ class Atlas;
 namespace vbl
 {
 	typedef const std::string& strref;
+	class Game;
 
-	class GameSprite : public Sprite
+	class Actor : public Sprite
+	{
+	public:
+		Actor(maf::fvec2 dimensions, const IDedPicture& picture, bool useDimensionsForBox = false);
+		Actor(const Actor& other);
+		Actor(Actor&&) = default;
+
+		virtual void update(Game* game);
+
+		typedef std::shared_ptr<Actor> Ref;
+	};
+
+	class GameSprite : public Actor
 	{
 	public:
 		GameSprite(maf::fvec2 dimensions, const IDedPicture& picture, bool useDimensionsForBox = false);
 		GameSprite(const GameSprite& other);
 		GameSprite(GameSprite&&) = default;
+
+		void update(Game* game) override;
 		
 		inline std::vector<std::unique_ptr<vbl::Particle>>& getParticles() { return this->queuedSpawns; }
 		void spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, float var = 0);

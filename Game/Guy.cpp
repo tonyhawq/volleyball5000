@@ -1,6 +1,7 @@
 #include "Guy.h"
 #include "random.h"
 #include "AI.h"
+#include "Game.h"
 
 vbl::Controller::Controller(const std::string& name, uint16_t team)
 	:name(name), dashQueuedown(0), jumpQueuedown(0), team(team), controlledBy(NULL)
@@ -294,8 +295,10 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 	}
 }
 
-void vbl::Guy::update(const Geometry& geometry, uint16_t tick)
+void vbl::Guy::update(Game* game)
 {
+	const vbl::Geometry& geometry = game->map.geometry;
+	uint32_t tick = game->tick;
 	updatePowerups();
 	maf::ivec2 input = { 0,0 };
 	if (this->controller)

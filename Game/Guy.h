@@ -91,7 +91,7 @@ namespace vbl
 
 		bool isPhysicalCollision(const GeometryBox* box);
 		void moveWithCollision(const Geometry& geometry);
-		void update(const Geometry& geometry, uint16_t tick);
+		void update(Game* game) override;
 		void updatePowerups();
 		void clearPowerups();
 

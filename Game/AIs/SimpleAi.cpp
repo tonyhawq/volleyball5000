@@ -45,7 +45,7 @@ void vbl::SimpleAI::input(Game* game)
 		return;
 	}
 	maf::fvec2 landed_pos = {};
-	target->trace(game->map.getGeometry(), game->map.actors, 500, 1, 5, &landed_pos);
+	target->trace(game->map.geometry, game->map.actors, game->simulatedBallResolution, 500, 5, &landed_pos);
 	// assume team sides always will have a team sided collider on it
 	bool isOnOtherTeamSide = false;
 	const vbl::Geometry& geometry = game->map.getGeometry();

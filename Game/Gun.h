@@ -22,10 +22,10 @@ namespace vbl
 		maf::fvec2 offset;
 		maf::fvec2 barrelOffset;
 	private:
-		std::string picture;
-		std::string shoot_picture;
-		std::string bullet_picture;
-		std::vector<std::string> casing_pictures;
+		IDedPicture picture;
+		IDedPicture shoot_picture;
+		IDedPicture bullet_picture;
+		std::vector<IDedPicture> casing_pictures;
 		std::vector<std::string> firing_sounds;
 		int ammo;
 		float power;

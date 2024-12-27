@@ -6,15 +6,19 @@ vbl::Gun::Gun(maf::fvec2 dim, strref picture, strref shoot_picture, strref bulle
 	:GameSprite(dim, Picture{ picture }, true),
 	ammo(ammo),
 	power(power),
-	picture(picture),
-	shoot_picture(shoot_picture),
-	bullet_picture(bullet_picture),
-	casing_pictures(casings),
+	picture(Picture(picture)),
+	shoot_picture(Picture(shoot_picture)),
+	bullet_picture(Picture(bullet_picture)),
+	casing_pictures(),
 	firing_sounds(firing_sounds),
 	offset(offset),
 	barrelOffset(barrelOffset)
 {
-
+	this->casing_pictures.reserve(casings.size());
+	for (const auto& picture : casings)
+	{
+		this->casing_pictures.push_back(Picture(picture));
+	}
 }
 
 void vbl::Gun::trigger(Game* world, float dir, int tick)
@@ -47,5 +51,7 @@ void vbl::Gun::shoot(Game* world, float dir, int tick)
 			this->casing_pictures[maf::random(0, int(this->casing_pictures.size()) - 1)],
 			SDL_Rect{ 0, 0, 10, 30 },
 			0, 10, box)))));
-	world->map.spawnActor();
+	Actor::Ref bullet = std::make_shared<Actor>(maf::fvec2{ 2, 2 }, this->bullet_picture, true);
+	bullet->setPos(this->pos);
+	bullet->setVel({ std::sin(dir) * 4, std::cos(dir) * 4 });
 }
