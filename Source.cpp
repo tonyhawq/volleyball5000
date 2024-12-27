@@ -2,12 +2,19 @@
 #include "Game/Atlas.h"
 #include "Game/AIs/SimpleAi.h"
 
-#include "Game/Debug/logtools.h"
+#include "Game/GDebug/logtools.h"
 
 #include <SDL_image.h>
 
 int main(int args, char* argc[])
 {
+	vbl::GameSprite texture = vbl::GameSprite({ 0,0 }, "sigma.png", false);
+	printf("has %s\n", texture.getTexture().getPicture().picture.c_str());
+	vbl::GameSprite copied = texture;
+	printf("has %s\n", copied.getTexture().getPicture().picture.c_str());
+	vbl::GameSprite* cptr = new vbl::GameSprite(texture);
+	printf("has %s\n", cptr->getTexture().getPicture().picture.c_str());
+
 	BEGIN_DEBUG_LOG("current.log");
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	IMG_Init(IMG_INIT_PNG);
@@ -64,61 +71,43 @@ int main(int args, char* argc[])
 	game.sound.loadMusic("content/sound/Gymnopedie No 1.mp3", "goime500");
 	game.sound.playMusic("goime500");
 	LOG("Beginning to load texture atlas.");
-	std::vector<std::string> paths = {
-			"missing.png",
-			"content/graphics/air_particle.png",
-			"content/graphics/ball.png",
-			"content/graphics/ball_ex_1.png",
-			"content/graphics/ball_glow.png",
-			"content/graphics/ball_particle.png",
-			"content/graphics/boink.png",
-			"content/graphics/doublepoints.png",
-			"content/graphics/flash.png",
-			"content/graphics/glow.png",
-			"content/graphics/ground_particle.png",
-			"content/graphics/guy_sheet.png",
-			"content/graphics/guy_sheet2.png",
-			"content/graphics/offscreen_arrow.png",
-			"content/graphics/stat_doublepoints.png",
-			"content/graphics/stat_flash.png",
-			"content/graphics/stat_triple.png",
-			"content/graphics/trace_end.png",
-			"content/graphics/triplejump.png",
-			"content/graphics/waiting_left.png",
-			"content/graphics/waiting_right.png",
-			"content/graphics/white_gradient.png",
-			"content/graphics/pointer.png",
-			"content/graphics/casing.png"
+	std::vector<pair_str_t> paths = {
+		pair_str_t{ "missing.png", "NO_ASSIGN" },
+		pair_str_t{ "content/graphics/air_particle.png", "air_particle" },
+		pair_str_t{ "content/graphics/ball.png", "ball"},
+		pair_str_t{ "content/graphics/ball_ex_1.png", "ball_explosion"},
+		pair_str_t{ "content/graphics/ball_glow.png", "ball_glow"},
+		pair_str_t{ "content/graphics/ball_particle.png", "ball_particle"},
+		pair_str_t{ "content/graphics/boink.png", "boink"},
+		pair_str_t{ "content/graphics/doublepoints.png", "doublepoints"},
+		pair_str_t{ "content/graphics/flash.png", "flash"},
+		pair_str_t{ "content/graphics/glow.png", "glow"},
+		pair_str_t{ "content/graphics/ground_particle.png", "ground_particle"},
+		pair_str_t{ "content/graphics/guy_sheet.png", "guy_sheet"},
+		pair_str_t{ "content/graphics/guy_sheet2.png", "guy_2_sheet"},
+		pair_str_t{ "content/graphics/offscreen_arrow.png", "offscreen_arrow"},
+		pair_str_t{ "content/graphics/stat_doublepoints.png", "stat_doublepoints"},
+		pair_str_t{ "content/graphics/stat_flash.png", "stat_flash"},
+		pair_str_t{ "content/graphics/stat_triple.png", "stat_triple"},
+		pair_str_t{ "content/graphics/trace_end.png", "trace_end"},
+		pair_str_t{ "content/graphics/triplejump.png", "triplejump"},
+		pair_str_t{ "content/graphics/waiting_left.png", "waiting_left"},
+		pair_str_t{ "content/graphics/waiting_right.png", "waiting_right"},
+		pair_str_t{ "content/graphics/white_gradient.png", "white_gradient"},
+		pair_str_t{ "content/graphics/pointer.png", "point"},
+		pair_str_t{ "content/graphics/casing.png", "casing"},
+		pair_str_t{ "content/graphics/blaster.png", "blaster"},
 	};
-		std::vector<std::string> names = {
-			"NO_ASSIGN",
-			"air_particle",
-			"ball",
-			"ball_explosion",
-			"ball_glow",
-			"ball_particle",
-			"boink",
-			"doublepoints",
-			"flash",
-			"glow",
-			"ground_particle",
-			"guy_sheet",
-			"guy_2_sheet",
-			"offscreen_arrow",
-			"stat_doublepoints",
-			"stat_flash",
-			"stat_triple",
-			"trace_end",
-			"triplejump",
-			"waiting_left",
-			"waiting_right",
-			"white_gradient",
-			"point",
-			"casing"
-		};
-	size_t rejects = game.renderer.atlas.addBulk(paths, names).size();
+	size_t rejects = game.renderer.atlas.addBulk(paths).size();
 	LOG("Texture atlas finished loading.");
 	LOG_F("Loaded {}/{} textures. {}/{} of those loaded had names.", paths.size() - rejects, paths.size(), names.size(), paths.size());
+	vbl::Gun* pistol = game.makeGun({ 60, 60 }, "pistol", "blaster", "blaster_shoot", "bullet", { "casing" }, { "pistol_fire", "pistol_fire_2" }, 999, 10.0f, { 50.0f, 0.0f }, { 0 });
+	pistol->offset = { 50, 50 };
+	pistol->barrelOffset = pistol->offset + maf::fvec2{ (float)pistol->getTexture().dimensions().x / 2, (float)pistol->getTexture().dimensions().y / 2};
+	for (auto& guy : game.map.guys)
+	{
+		guy->giveGun(new vbl::Gun(*game.getGun("pistol")));
+	}
 	game.run();
 	LOG("Goodbye.")
 	END_DEBUG_LOG();

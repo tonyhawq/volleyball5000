@@ -1,23 +1,17 @@
 #include "Sprite.h"
 
-size_t vbl::SpriteTexture::INVALID_CACHED = SIZE_MAX;
+#include "Atlas.h"
 
-vbl::SpriteTexture::SpriteTexture(const std::string& picture, SDL_Rect box, float rotation)
+vbl::SpriteTexture::SpriteTexture(const IDedPicture& picture, SDL_Rect box, float rotation)
 	:picture(picture), textureBox(box), rotation(rotation), spriteDimensions({box.w, box.h}), animState(0)
 {
 
 }
 
-vbl::SpriteTexture::SpriteTexture()
-	:picture("NO_ASSIGN"), textureBox({0,0,0,0}), rotation(0), animState(0)
-{
-
-}
-
-vbl::SpriteTexture::SpriteTexture(const std::string& picture, SDL_Rect box, float rotation, maf::ivec2 spriteDimensions)
+vbl::SpriteTexture::SpriteTexture(const IDedPicture& picture, SDL_Rect box, float rotation, maf::ivec2 spriteDimensions)
 	:picture(picture), textureBox(box), rotation(rotation), spriteDimensions(spriteDimensions), animState(0)
 {
-	
+	printf("%s was passed %s\n", __FUNCTION__, picture.picture.c_str());
 }
 
 vbl::SpriteTexture::~SpriteTexture()
@@ -25,8 +19,22 @@ vbl::SpriteTexture::~SpriteTexture()
 
 }
 
-vbl::Sprite::Sprite(maf::fvec2 dimensions, const std::string& picture, bool useDimensionsForBox)
-	:texture(picture, {0, 0, (int)dimensions.x, (int)dimensions.y}, 0)
+void vbl::SpriteTexture::cache(const Atlas* atlas)
+{
+	if (!atlas)
+	{
+		return;
+	}
+	atlas->get(this->picture.picture, this->picture.id);
+}
+
+void vbl::Sprite::cacheTexture(const Atlas* atlas)
+{
+	this->texture.cache(atlas);
+}
+
+vbl::Sprite::Sprite(maf::fvec2 dimensions, const IDedPicture& picture, bool useDimensionsForBox)
+	:texture(picture, {0, 0, (int)dimensions.x, (int)dimensions.y}, 0), itype(AType::Sprite)
 {
 	if (useDimensionsForBox)
 	{
@@ -35,8 +43,8 @@ vbl::Sprite::Sprite(maf::fvec2 dimensions, const std::string& picture, bool useD
 	this->setPos({ 0,0 });
 }
 
-vbl::Sprite::Sprite(maf::fvec2 dimensions, const std::string& picture, maf::ivec2 spriteDimensions, bool useDimensionsForBox)
-	:texture(picture, {0,0,(int)dimensions.x,(int)dimensions.y}, 0, spriteDimensions)
+vbl::Sprite::Sprite(maf::fvec2 dimensions, const IDedPicture& picture, maf::ivec2 spriteDimensions, bool useDimensionsForBox)
+	:texture(picture, {0,0,(int)dimensions.x,(int)dimensions.y}, 0, spriteDimensions), itype(AType::Sprite)
 {
 	if (useDimensionsForBox)
 	{
@@ -57,6 +65,14 @@ void vbl::Sprite::setPos(maf::fvec2 pos)
 	this->pos = pos;
 	this->box.setPos(pos);
 	this->texture.setPos(pos);
+}
+
+void vbl::Sprite::setVisMid(maf::fvec2 pos)
+{
+	this->setPos({
+		pos.x - this->texture.dimensions().x / 2,
+		pos.y - this->texture.dimensions().y / 2,
+		});
 }
 
 void vbl::MAABB::move(maf::fvec2 vel)

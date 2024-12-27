@@ -1,13 +1,15 @@
 #include "Ball.h"
 
-vbl::Ball::Ball(const std::string& picture, const std::string& glowPicture, float diameter)
-	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowPicture)
+#include "Guy.h"
+
+vbl::Ball::Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter)
+	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowPicture, SDL_Rect{0, 0, (int)diameter, (int)diameter}, 0)
 {
 
 }
 
-vbl::Ball::Ball(const std::string& picture, const std::string& glowPicture, float diameter, PowerupType powerup)
-	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), powerup(powerup), glowTexture(glowPicture)
+vbl::Ball::Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter, PowerupType powerup)
+	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), powerup(powerup), glowTexture(glowPicture, SDL_Rect{ 0, 0, (int)diameter, (int)diameter }, 0)
 {
 
 }
@@ -31,10 +33,6 @@ void vbl::Ball::trigger(const GeometryBox* box)
 void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated)
 {
 	if (!sprite)
-	{
-		return;
-	}
-	if (sprite == this->wasInside)
 	{
 		return;
 	}
@@ -72,24 +70,33 @@ void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::S
 	float imparted = (abs(vel.x - prevVel.x) + abs(vel.y - prevVel.y)) / 2;
 	float guyDir = (float)maf::pointTowards(sprite->getBox().getMiddle(), this->getBox().getMiddle());
 	sprite->setVel(sprite->getVel() + maf::fvec2{ maf::clamp(-imparted * std::sin(guyDir), -5.0f, 5.0f), maf::clamp(imparted * std::cos(guyDir), -5.0f, 5.0f) });
-	collisionParticle(std::max(speedDiff, 4.0f));
+	collisionParticle(int(std::max(speedDiff, 4.0f)));
 	// bounded lest it go on ad infinitum...
 	int loops = 25;
 	maf::fvec2 antithesis = { -std::sin(guyDir), std::cos(guyDir) };
 	bool hitGeo = false;
+	uint16_t team = 0;
+	if (sprite->type() == AType::Guy)
+	{
+		Guy* casted = reinterpret_cast<Guy*>(sprite.get());
+		if (casted->getController())
+		{
+			team = casted->getController()->getTeam();
+		}
+	}
 	while (loops > 0 && this->box.collide(sprite->getBox()))
 	{
 		hitGeo = false;
 		loops--;
 		sprite->move({ antithesis.x, 0 });
-		if (geometry.collidesNotrigger(sprite->getBox()))
+		if (geometry.collidesNotriggerTeamed(sprite->getBox(), team))
 		{
 			antithesis.x = -antithesis.x;
 			sprite->move({ antithesis.x, 0 });
 			hitGeo = true;
 		}
 		sprite->move({ 0, antithesis.y });
-		if (geometry.collidesNotrigger(sprite->getBox()))
+		if (geometry.collidesNotriggerTeamed(sprite->getBox(), team))
 		{
 			antithesis.y = -antithesis.y;
 			sprite->move({ 0, antithesis.y });
@@ -130,15 +137,19 @@ uint8_t vbl::Ball::collidesWithGeometryBox(const GeometryBox* box)
 	return 1;
 }
 
-void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, bool simulated)
+void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, float resolution, bool simulated)
 {
-	float steps = abs(vel.x) + abs(vel.y);
+	float steps = (abs(vel.x) + abs(vel.y)) / resolution;
 	float increment = steps;
 	while (increment > 0)
 	{
+		if (increment < 1)
+		{
+			steps = steps / increment;
+		}
 		this->move({ this->vel.x / steps, 0 });
-		std::vector<uint32_t> res = geometry.collidesWithIndicies(this->box);
-		for (const auto result : res)
+		geometry.collidesWithResNoalloc(this->box, this->cached_res);
+		for (const auto result : cached_res)
 		{
 			const GeometryBox* box = geometry.get(result);
 			uint8_t collisionType = this->collidesWithGeometryBox(box);
@@ -160,8 +171,8 @@ void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<st
 			this->trigger(box);
 		}
 		this->move({ 0, this->vel.y / steps });
-		res = geometry.collidesWithIndicies(this->box);
-		for (const auto result : res)
+		geometry.collidesWithResNoalloc(this->box, this->cached_res);
+		for (const auto result : cached_res)
 		{
 			const GeometryBox* box = geometry.get(result);
 			uint8_t collisionType = this->collidesWithGeometryBox(box);
@@ -186,9 +197,9 @@ void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<st
 	}
 }
 
-void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, uint32_t tick, bool simulated)
+void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t tick, float resolution, bool simulated)
 {
-	if (this->spawning > 0)
+	if (this->spawning > 0 && !simulated)
 	{
 		this->spawning--;
 		this->glow = int((float)spawning / (float)spawnTime * 255);
@@ -197,13 +208,12 @@ void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_p
 	this->wasTriggered = false;
 	this->triggeredTeam = 0;
 	this->vel.y += this->gravity;
-	moveWithCollision(geometry, actors, simulated);
+	moveWithCollision(geometry, actors, resolution, simulated);
 	const std::shared_ptr<vbl::Sprite> res = collidesWithActor(actors);
 	if (res)
 	{
 		this->bounceOff(geometry, res, simulated);
 	}
-	this->wasInside = res;
 	if (this->lastBoink > 0)
 	{
 		this->lastBoink -= !simulated;
@@ -217,7 +227,6 @@ void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_p
 void vbl::Ball::reset(uint32_t spawnTime)
 {
 	this->vel = { 0,0 };
-	this->wasInside.reset();
 	this->texture.rotate(-this->texture.getRotation());
 	this->spawnTime = spawnTime;
 	this->spawning = spawnTime;
@@ -225,9 +234,12 @@ void vbl::Ball::reset(uint32_t spawnTime)
 	this->triggeredTeam = 0;
 }
 
-const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit, maf::fvec2* ended_pos)
+const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit)
 {
-	tracePoints.clear();
+	if (tracer.points.size() < length)
+	{
+		tracer.points.resize(length);
+	}
 	uint32_t lastSpawning = this->spawning;
 	maf::fvec2 startingPos = this->pos;
 	maf::fvec2 startingVel = this->vel;
@@ -235,22 +247,24 @@ const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const 
 	int bounces = 0;
 	bool prevTriggerState = this->wasTriggered;
 	uint16_t prevTriggerTeam = this->triggeredTeam;
-	while (length > 0 && bounces <= bounceLimit)
+	int i = 0;
+	while (length > 0 /* && bounces < bounceLimit */)
 	{
-		update(geometry, actors, 0, true);
+		update(geometry, actors, 0, resolution, true);
 		if (bounced)
 		{
 			bounces++;
 		}
 		bounced = false;
-		tracePoints.push_back(this->texture.getMiddle());
+		tracer.points[i] = this->texture.getMiddle();
 		if (triggered())
 		{
 			this->wasTriggered = false;
 			this->triggeredTeam = 0;
-			break;
+			//break;
 		}
 		length--;
+		i++;
 	}
 	if (ended_pos)
 	{
@@ -262,7 +276,8 @@ const std::vector<maf::ivec2>& vbl::Ball::trace(const Geometry& geometry, const 
 	this->spawning = lastSpawning;
 	this->wasTriggered = prevTriggerState;
 	this->triggeredTeam = prevTriggerTeam;
-	return this->tracePoints;
+	this->tracer.length = i;
+	return this->tracer;
 }
 
 void vbl::Ball::collisionParticle(int count)

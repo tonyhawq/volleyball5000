@@ -17,7 +17,7 @@ namespace vbl
 	class Particle
 	{
 	public:
-		Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed);
+		Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed);
 
 		inline SpriteTexture& getTexture() { return this->texture; }
 		inline const SpriteTexture& getTexture() const { return this->texture; }
@@ -41,7 +41,7 @@ namespace vbl
 	class PBRParticle : public Particle
 	{
 	public:
-		PBRParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, const MAABB& hull);
+		PBRParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, const MAABB& hull);
 	
 		void update(Game* game);
 		inline const MAABB& getHull() const { return this->hull; }
@@ -54,8 +54,8 @@ namespace vbl
 	class ParticleManager
 	{
 	public:
-		vbl::Particle* spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed);
-		void spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist);
+		vbl::Particle* spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed);
+		void spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist);
 		void spawnCustom(Particle* particle);
 
 		void addParticles(std::vector<std::unique_ptr<vbl::Particle>>& particles);

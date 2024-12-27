@@ -47,7 +47,7 @@ bool vbl::Geometry::collides(const MAABB& other) const
 	return false;
 }
 
-bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
+bool vbl::Geometry::collidesNotriggerTeamed(const MAABB& other, uint16_t team) const
 {
 	for (const auto& a : boxes)
 	{
@@ -55,7 +55,7 @@ bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
 		{
 			continue;
 		}
-		if (a.team)
+		if (a.team && a.team != team)
 		{
 			continue;
 		}
@@ -70,11 +70,16 @@ bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
 	return false;
 }
 
-std::vector<uint32_t> vbl::Geometry::collidesWithIndicies(const MAABB& other) const
+bool vbl::Geometry::collidesNotrigger(const MAABB& other) const
+{
+	return collidesNotriggerTeamed(other, 0);
+}
+
+std::vector<uint32_t> vbl::Geometry::collidesWithRes(const MAABB& other) const
 {
 	std::vector<uint32_t> indicies;
 	indicies.reserve(this->boxes.size());
-	const std::vector<maf::frect> boxes = other.getBoxes();
+	const std::vector<maf::frect>& boxes = other.getBoxes();
 	for (uint32_t i = 0; i < this->boxes.size(); i++)
 	{
 		for (uint32_t j = 0; j < boxes.size(); j++)
@@ -88,20 +93,28 @@ std::vector<uint32_t> vbl::Geometry::collidesWithIndicies(const MAABB& other) co
 	return indicies;
 }
 
-std::vector<vbl::GeometryBox> vbl::Geometry::collidesWithBoxes(const MAABB& other) const
+void vbl::Geometry::collidesWithResNoalloc(const MAABB& other, std::vector<uint32_t>& vec) const
 {
-	std::vector<vbl::GeometryBox> collidedWith;
-	collidedWith.reserve(this->boxes.size());
-	const std::vector<maf::frect> boxes = other.getBoxes();
-	for (uint32_t i = 0; i < this->boxes.size(); i++)
+	vec.clear();
+	if (vec.capacity() < this->boxes.size())
 	{
-		for (uint32_t j = 0; j < boxes.size(); j++)
+		vec.reserve(this->boxes.size());
+	}
+	const std::vector<maf::frect>& boxes = other.getBoxes();
+	for (uint32_t this_i = 0; this_i < this->boxes.size(); this_i++)
+	{
+		for (uint32_t other_i = 0; other_i < boxes.size(); other_i++)
 		{
-			if (maf::collides(this->boxes[i].box, boxes[j]))
+			if (maf::collides(this->boxes[this_i].box, boxes[other_i]))
 			{
-				collidedWith.push_back(this->boxes[i]);
+				vec.push_back(this_i);
 			}
 		}
 	}
-	return collidedWith;
+}
+
+const std::vector<uint32_t>& vbl::Geometry::collidesWithResSelfNoalloc(const MAABB& other)
+{
+	collidesWithResNoalloc(other, this->cached_indicies);
+	return this->cached_indicies;
 }

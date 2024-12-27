@@ -5,7 +5,7 @@
 #include "random.h"
 #include "Game.h"
 
-vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture , SDL_Rect box, float rotation, float rotationSpeed)
+vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture , SDL_Rect box, float rotation, float rotationSpeed)
 	:lifespan(lifespan), pos(pos), vel(vel), texture(picture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan), type(PType::Basic)
 {
 	this->texture.setPos(this->pos);
@@ -19,16 +19,16 @@ void vbl::Particle::update()
 	}
 	if (this->fade)
 	{
-		this->alpha = (float)this->lifespan / (float)this->maxLifespan * 255;
+		this->alpha = uint8_t((float)this->lifespan / (float)this->maxLifespan * 255.0f);
 	}
 	this->texture.rotate(this->rotationSpeed);
 	this->pos = this->pos + this->vel;
-	this->vel.x *= 0.95;
-	this->vel.y *= 0.95;
+	this->vel.x *= 0.95f;
+	this->vel.y *= 0.95f;
 	this->texture.setPos(this->pos);
 }
 
-vbl::PBRParticle::PBRParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, const MAABB& hull)
+vbl::PBRParticle::PBRParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, const MAABB& hull)
 	:Particle(lifespan, pos, vel, picture, box, rotation, rotationSpeed), hull(hull)
 {
 	this->type = PType::PBR;
@@ -42,13 +42,13 @@ void vbl::PBRParticle::update(Game* game)
 	}
 	if (this->fade)
 	{
-		this->alpha = (float)this->lifespan / (float)this->maxLifespan * 255;
+		this->alpha = uint8_t((float)this->lifespan / (float)this->maxLifespan * 255.0f);
 	}
 	didx = false;
 	didy = false;
 	this->texture.rotate(this->rotationSpeed);
-	this->vel.x *= 0.985;
-	this->vel.y += 0.25;
+	this->vel.x *= 0.985f;
+	this->vel.y += 0.25f;
 	this->pos.x += this->vel.x;
 	this->hull.setPos(this->pos);
 	if (game->map.geometry.collidesNotrigger(this->hull))
@@ -67,13 +67,13 @@ void vbl::PBRParticle::update(Game* game)
 	}
 	if (didx || didy)
 	{
-		this->rotationSpeed *= 0.9;
+		this->rotationSpeed *= 0.9f;
 	}
 	this->texture.setPos(this->pos);
 	this->hull.setPos(this->pos);
 }
 
-vbl::Particle* vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed)
+vbl::Particle* vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed)
 {
 	particles.push_front(std::move(std::make_unique<Particle>(lifespan, pos, vel, picture, box, rotation, rotationSpeed)));
 	return particles.front().get();
@@ -81,15 +81,15 @@ vbl::Particle* vbl::ParticleManager::spawnParticle(uint32_t lifespan, maf::fvec2
 
 void vbl::ParticleManager::spawnCustom(Particle* particle)
 {
-	particles.push_front(std::unique_ptr<Particle>(particle));
+	particles.push_front(std::move(std::unique_ptr<Particle>(particle)));
 }
 
-void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const std::string& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
+void vbl::ParticleManager::spewParticles(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, uint32_t variations, float varDist)
 {
 	for (uint32_t i = 0; i < variations; i++)
 	{
 		spawnParticle(
-			lifespan + maf::random(-varDist, varDist),
+			lifespan + uint32_t(maf::random(-varDist, varDist)),
 			{ pos.x + maf::random(-varDist, varDist), pos.y + maf::random(-varDist, varDist) },
 			{ vel.x + maf::random(-varDist, varDist), vel.y + maf::random(-varDist, varDist) },
 			picture,
@@ -137,7 +137,8 @@ void vbl::ParticleManager::addParticles(std::vector<std::unique_ptr<vbl::Particl
 {
 	while (particles.size())
 	{
-		int index = particles.size() - 1;
+		// size_t narrow
+		int index = int(particles.size()) - 1;
 		if (!particles[index].get())
 		{
 			particles.pop_back();

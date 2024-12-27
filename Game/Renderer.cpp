@@ -5,7 +5,7 @@
 #include <iostream>
 #include <filesystem>
 
-#include "Debug/logtools.h"
+#include "GDebug/logtools.h"
 
 vbl::Renderer::Renderer(uint32_t width, uint32_t height, uint32_t atlasWidth, uint32_t atlasHeight, float renderScale)
 	:renderer(NULL), window(NULL), target(NULL), renderScale(renderScale), atlas(atlasWidth, atlasHeight)
@@ -102,16 +102,17 @@ void vbl::Renderer::presentFrame()
 void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha)
 {
 	SDL_Rect clipping{};
-	if (sprite.cachedID == SpriteTexture::INVALID_CACHED)
+	if (sprite.getPicture().id == Atlas::INVALID_CACHED)
 	{
-		clipping = this->atlas.get(sprite.getPicture());
+		clipping = this->atlas.get(sprite.getPicture().picture);
 	}
 	else
 	{
-		clipping = this->atlas.get(sprite.cachedID);
+		clipping = this->atlas.get(sprite.getPicture().picture);
 	}
 	if (clipping.w == 0 || clipping.h == 0)
 	{
+		printf("could not render %s (%zu)\n", sprite.getPicture().picture.c_str(), sprite.getPicture().id);
 		DEBUG_LOG_F("Rendering sprite texture with picture {} failed. Atlas likely does not have {} registered.", sprite.getPicture(), sprite.getPicture());
 	}
 	//DEBUG_LOG_F("{}, {} {}x{}", clipping.x, clipping.y, clipping.w, clipping.h);
@@ -147,9 +148,9 @@ void vbl::Renderer::renderSpriteConst(const SpriteTexture& sprite, uint8_t alpha
 
 void vbl::Renderer::renderSprite(SpriteTexture& sprite, uint8_t alpha)
 {
-	if (sprite.cachedID == SpriteTexture::INVALID_CACHED)
+	if (sprite.getPicture().id == Atlas::INVALID_CACHED)
 	{
-		this->atlas.get(sprite.getPicture(), sprite.cachedID);
+		this->atlas.get(sprite.changePicture().picture, sprite.changePicture().id);
 	}
 	renderSpriteConst(sprite, alpha);
 }
@@ -186,7 +187,7 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry)
 	for (const auto& rect : geometry.getRects())
 	{
 		SDL_SetRenderDrawColor(this->renderer, rect.clr.r, rect.clr.g, rect.clr.b, rect.clr.a);
-		SDL_Rect temp = { rect.box.x, rect.box.y, rect.box.w, rect.box.h };
+		SDL_Rect temp = rect.box.SDLI();
 		mapRect(&temp);
 		SDL_RenderFillRect(this->renderer, &temp);
 		SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
@@ -230,18 +231,18 @@ void vbl::Renderer::renderGeometry(const Geometry& geometry, bool debug)
 	}
 }
 
-void vbl::Renderer::renderTrace(const std::vector<maf::ivec2>& points, SpriteTexture& endTex)
+void vbl::Renderer::renderTrace(const vbl::Ball::Trace& trace, SpriteTexture& endTex)
 {
-	if (points.size() < 2)
+	if (trace.points.size() < 2)
 	{
 		return;
 	}
 	SDL_SetRenderDrawColor(this->renderer, 255, 0, 0, 255);
-	maf::ivec2 lastPoint = points[0];
-	for (int i = 1; i < points.size(); i++)
+	maf::ivec2 lastPoint = trace.points[0];
+	for (int i = 1; i < trace.length; i++)
 	{
-		SDL_RenderDrawLine(this->renderer, int(lastPoint.x * renderScale), int(lastPoint.y * renderScale), int(points[i].x * renderScale), int(points[i].y * renderScale));
-		lastPoint = points[i];
+		SDL_RenderDrawLine(this->renderer, int(lastPoint.x * renderScale), int(lastPoint.y * renderScale), int(trace.points[i].x * renderScale), int(trace.points[i].y * renderScale));
+		lastPoint = trace.points[i];
 	}
 	endTex.setMiddle({ lastPoint.x, lastPoint.y });
 	renderSprite(endTex);
@@ -294,7 +295,8 @@ void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
 		'h', 'i', 'j', 'k', 'l', 'm',
 		'n', 'o', 'p', 'q', 'r', 's',
 		't', 'u', 'v', 'w', 'x', 'y',
-		'z', '.', '*', '-', ',', ' '
+		'z', '.', '*', '-', ',', ' ',
+		'(', ')'
 	};
 	int i = 0;
 	int characterW = 5;
@@ -325,7 +327,8 @@ void vbl::Renderer::loadChars(const std::string& fontPath, SDL_Color clr)
 
 std::shared_ptr<vbl::RawTexture> vbl::Renderer::makeText(const std::string& str)
 {
-	SDL_Surface* textSurf = SDL_CreateRGBSurfaceWithFormat(0, str.size() * 5 + std::max((int)str.size() - 1, 0) + 1, 7, 32, SDL_PIXELFORMAT_RGBA8888);
+	// size_t narrow
+	SDL_Surface* textSurf = SDL_CreateRGBSurfaceWithFormat(0, int(str.size()) * 5 + std::max((int)str.size() - 1, 0) + 1, 7, 32, SDL_PIXELFORMAT_RGBA8888);
 	SDL_FillRect(textSurf, NULL, SDL_MapRGBA(textSurf->format, 0, 0, 0, 0));
 	SDL_Rect at = { 0, 0, 5, 7 };
 	SDL_SetSurfaceBlendMode(textSurf, SDL_BLENDMODE_BLEND);

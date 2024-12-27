@@ -85,11 +85,11 @@ namespace vbl
 			float remaining;
 		};
 
-		Guy(const std::string& name, float diameter, const std::string& picture, Controller* controller = NULL);
+		Guy(const std::string& name, float diameter, const Picture& picture, Controller* controller = NULL);
 
 		void link(Controller* controller);
 
-		bool collidesWithGeometryBox(const GeometryBox* box);
+		bool isPhysicalCollision(const GeometryBox* box);
 		void moveWithCollision(const Geometry& geometry);
 		void update(const Geometry& geometry, uint16_t tick);
 		void updatePowerups();
@@ -115,10 +115,14 @@ namespace vbl
 		inline const Controller* getController() const { return this->controller; }
 		inline Controller* changeController() { return this->controller; }
 
+		void deleteGun();
 		inline Gun* gun() { return this->firearm; }
-		inline bool hasGun() const { return (!!firearm); }
+		inline bool hasGun() const { return firearm; }
+		void giveGun(Gun* gun);
 	private:
-		Gun* firearm;
+		std::vector<uint32_t> cached_res;
+
+		Gun* firearm = NULL;
 
 		std::vector<Powerup> powers;
 

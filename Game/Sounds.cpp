@@ -1,6 +1,6 @@
 #include "Sounds.h"
 
-#include "Debug/logtools.h"
+#include "GDebug/logtools.h"
 
 vbl::Sounds::Sounds(int openChannels)
 	:openChannels(openChannels), currentChannel(0)
@@ -56,7 +56,7 @@ void vbl::Sounds::loadSound(const std::vector<std::string>& path, const std::str
 	}
 	clearSound(name);
 	SoundData dat{};
-	dat.variations = chunks.size();
+	dat.variations = int(chunks.size()); // size_t narrow
 	dat.id = this->currentID++;
 	DEBUG_LOG(std::format("Loading sound {} complete, only {}/{} variations loaded.", name, chunks.size(), path.size()));
 	if (dat.variations == 1)

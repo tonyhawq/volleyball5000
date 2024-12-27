@@ -144,9 +144,10 @@ vbl::MAABB vbl::Guy::makeCircle(float diameter)
 		});
 }
 
-vbl::Guy::Guy(const std::string& name, float diameter, const std::string& picture, Controller* controller)
+vbl::Guy::Guy(const std::string& name, float diameter, const Picture& picture, Controller* controller)
 	: GameSprite({ diameter, diameter }, picture)
 {
+	this->itype = AType::Guy;
 	this->name = name;
 	if (controller)
 	{
@@ -230,7 +231,7 @@ void vbl::Guy::reset()
 	this->dashes = this->maxDashes;
 }
 
-bool vbl::Guy::collidesWithGeometryBox(const GeometryBox* box)
+bool vbl::Guy::isPhysicalCollision(const GeometryBox* box)
 {
 	if (!box)
 	{
@@ -263,10 +264,10 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 	while (increment > 0)
 	{
 		this->move({ this->vel.x / steps, 0 });
-		std::vector<uint32_t> xres = geometry.collidesWithIndicies(this->box);
-		for (const auto res : xres)
+		geometry.collidesWithResNoalloc(this->box, this->cached_res);
+		for (const auto res : cached_res)
 		{
-			if (collidesWithGeometryBox(geometry.get(res)))
+			if (isPhysicalCollision(geometry.get(res)))
 			{
 				this->move({ -this->vel.x / steps, 0 });
 				onGround = true;
@@ -276,10 +277,10 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 			}
 		}
 		this->move({ 0, this->vel.y / steps });
-		std::vector<uint32_t> yres = geometry.collidesWithIndicies(this->box);
-		for (const auto res : yres)
+		geometry.collidesWithResNoalloc(this->box, this->cached_res);
+		for (const auto res : cached_res)
 		{
-			if (collidesWithGeometryBox(geometry.get(res)))
+			if (isPhysicalCollision(geometry.get(res)))
 			{
 				this->move({ 0, -this->vel.y / steps });
 				onGround = true;
@@ -452,4 +453,20 @@ void vbl::Guy::powerup(Ball::PowerupType powerup, float duration)
 	applyPower(powerup);
 }
 
+void vbl::Guy::deleteGun()
+{
+	if (this->hasGun())
+	{
+		delete this->firearm;
+	}
+}
 
+void vbl::Guy::giveGun(Gun* gun)
+{
+	this->deleteGun();
+	if (!gun)
+	{
+		return;
+	}
+	this->firearm = gun;
+}

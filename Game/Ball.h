@@ -19,8 +19,14 @@ namespace vbl
 			POWERUP_SLOWTIME,
 		};
 
-		Ball(const std::string& picture, const std::string& glowPicture, float diameter);
-		Ball(const std::string& picture, const std::string& glowPicture, float diameter, PowerupType powerup);
+		struct Trace
+		{
+			std::vector<maf::ivec2> points;
+			uint32_t length;
+		};
+
+		Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter);
+		Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter, PowerupType powerup);
 
 		inline void setGravity(float gravity) { this->gravity = gravity; }
 
@@ -33,7 +39,7 @@ namespace vbl
 		uint8_t collidesWithGeometryBox(const GeometryBox* box);
 		const std::shared_ptr<vbl::Sprite> collidesWithActor(const std::vector<std::shared_ptr<vbl::Sprite>>& actors);
 
-		const std::vector<maf::ivec2>& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float res, int bounceLimit = 9999, maf::fvec2* ended_pos = NULL);
+		const Trace& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit = 9999);
 
 		void bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated = false);
 		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, bool simulated = false);
@@ -45,21 +51,21 @@ namespace vbl
 
 		inline uint32_t isSpawning() const { return this->spawning; }
 		inline uint8_t getGlow() const { return this->glow; }
-		inline const std::string& getGlowTex() { return this->glowTexture; }
+		inline const SpriteTexture& getGlowTex() { this->glowTexture.setPos(this->pos); return this->glowTexture; }
 		inline bool hitGuy() const { return this->lastBoink > 0; }
 		inline float hitStrength() const { return this->lastBoinkStrength; }
 
 		void collisionParticle(int count);
 
-		std::vector<maf::ivec2> tracePoints;
+		Trace tracer;
 	private:
+		std::vector<uint32_t> cached_res;
 		uint32_t spawnTime = 0;
 		uint32_t spawning = 0;
-		const std::string& glowTexture;
+		SpriteTexture glowTexture;
 		uint8_t glow = 0;
 		bool bounced = false;
 		PowerupType powerup = POWERUP_NONE;
-		std::shared_ptr<vbl::Sprite> wasInside = NULL;
 		float gravity = 0;
 		bool wasTriggered;
 		uint16_t triggeredTeam;
