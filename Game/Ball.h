@@ -39,11 +39,11 @@ namespace vbl
 		uint8_t collidesWithGeometryBox(const GeometryBox* box);
 		const std::shared_ptr<vbl::Sprite> collidesWithActor(const std::vector<std::shared_ptr<vbl::Sprite>>& actors);
 
-		const Trace& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit = 9999);
+		const Trace& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit = 9999, maf::fvec2* ended_pos = NULL);
 
 		void bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated = false);
-		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, bool simulated = false);
-		void update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, uint32_t tick, bool simulated = false);
+		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, float resolution, bool simulated = false);
+		void update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t tick, float resolution, bool simulated = false);
 
 		void reset(uint32_t spawnTime);
 

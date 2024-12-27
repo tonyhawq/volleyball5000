@@ -137,7 +137,7 @@ uint8_t vbl::Ball::collidesWithGeometryBox(const GeometryBox* box)
 	return 1;
 }
 
-void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, float resolution, bool simulated)
+void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, float resolution, bool simulated)
 {
 	float steps = (abs(vel.x) + abs(vel.y)) / resolution;
 	float increment = steps;
@@ -234,7 +234,7 @@ void vbl::Ball::reset(uint32_t spawnTime)
 	this->triggeredTeam = 0;
 }
 
-const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit)
+const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit, maf::fvec2* ended_pos)
 {
 	if (tracer.points.size() < length)
 	{

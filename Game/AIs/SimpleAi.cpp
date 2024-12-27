@@ -44,10 +44,13 @@ void vbl::SimpleAI::input(Game* game)
 	target->trace(game->map.getGeometry(), game->map.actors, 500, 1, 5, &landed_pos);
 	// assume team sides always will have a team sided collider on it
 	bool isOnOtherTeamSide = false;
-	std::vector<vbl::GeometryBox> results = game->map.getGeometry().collidesWithBoxes(MAABB(landed_pos));
+	const vbl::Geometry& geometry = game->map.getGeometry();
+	const std::vector<vbl::GeometryBox>& boxes = geometry.getBoxes();
+	std::vector<uint32_t> results = geometry.collidesWithRes(MAABB(landed_pos));
 	for (const auto& result : results)
 	{
-		if (result.team == this->linked->getTeam())
+		const vbl::GeometryBox& box = boxes[result];
+		if (box.team == this->linked->getTeam())
 		{
 			isOnOtherTeamSide = true;
 			break;

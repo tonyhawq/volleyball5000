@@ -24,7 +24,7 @@ void vbl::Gun::trigger(Game* world, float dir, int tick)
 		return;
 	}
 	this->nextFireTick = tick + this->firingDelay;
-	this->shoot(world);
+	this->shoot(world, dir, tick);
 }
 
 void vbl::Gun::shoot(Game* world, float dir, int tick)
