@@ -46,6 +46,9 @@ namespace vbl
 		void removeBall(int* i);
 
 		void respawnGuy(std::shared_ptr<vbl::Guy> guy, uint16_t team);
+		void spawnActor(std::shared_ptr<vbl::Sprite> actor);
+		void deleteActor(int idx);
+		bool deleteActor(std::shared_ptr<vbl::Sprite> actor);
 
 		void resetMap();
 

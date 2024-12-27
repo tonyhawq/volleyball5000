@@ -204,6 +204,34 @@ void vbl::Map::clearBalls()
 	this->balls.clear();
 }
 
+void vbl::Map::spawnActor(std::shared_ptr<Sprite> actor)
+{
+	this->actors.push_back(actor);
+}
+
+void vbl::Map::deleteActor(int idx)
+{
+	if (idx < 0 || idx >= this->actors.size())
+	{
+		throw new std::out_of_range("Deleting actor was out of range.");
+	}
+	this->actors.erase(this->actors.begin() + idx);
+}
+
+bool vbl::Map::deleteActor(std::shared_ptr<Sprite> actor)
+{
+	for (int i = 0; i < this->actors.size(); i++)
+	{
+		const std::shared_ptr<Sprite>& present = this->actors[i];
+		if (present.get() == actor.get())
+		{
+			this->actors.erase(this->actors.begin() + i);
+			return true;
+		}
+	}
+	return false;
+}
+
 vbl::Game::Game(uint32_t width, uint32_t height, float scale)
 	:renderer(width, height, 2048, 2048, scale), sound(10), nextPowerupTick(0), traceEndTexture("NO_ASSIGN", { 0 }, 0.0f)
 {

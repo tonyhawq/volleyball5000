@@ -47,4 +47,5 @@ void vbl::Gun::shoot(Game* world, float dir, int tick)
 			this->casing_pictures[maf::random(0, int(this->casing_pictures.size()) - 1)],
 			SDL_Rect{ 0, 0, 10, 30 },
 			0, 10, box)))));
+	world->map.spawnActor();
 }
