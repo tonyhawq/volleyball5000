@@ -261,7 +261,7 @@ const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::ve
 		{
 			this->wasTriggered = false;
 			this->triggeredTeam = 0;
-			//break;
+			break;
 		}
 		length--;
 		i++;

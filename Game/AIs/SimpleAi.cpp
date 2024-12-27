@@ -32,6 +32,10 @@ void vbl::SimpleAI::input(Game* game)
 	for (int i = 0; i < game->map.balls.size(); i++)
 	{
 		std::shared_ptr<Ball> prospect = game->map.balls[i];
+		if (prospect->isPowerup())
+		{
+			continue;
+		}
 		maf::fvec2 pos = prospect->getPos();
 		maf::fvec2 vel = prospect->getVel();
 		target = prospect;
