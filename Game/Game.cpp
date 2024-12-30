@@ -385,10 +385,17 @@ int vbl::Game::makeGuy(const std::string& name, const std::string& picture, maf:
 	return result;
 }
 
-vbl::Gun* vbl::Game::makeGun(maf::fvec2 dim, strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset)
+vbl::Gun* vbl::Game::makeGun(maf::fvec2 dim, strref name, strref picture, strref shoot_picture, strref muzzle_flash, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset)
 {
-	this->guns.insert(std::make_pair(name, Gun(dim, picture, shoot_picture, bullet, casings, firing_noises, ammo, power, offset, barrelOffset)));
+	// maf::fvec2 dim, strref picture, strref shoot_picture, strref flash_picture, strref bullet_picture,
+	// const std::vector<std::string>& casings, strref firing_sound, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset, int firingDelay
+	this->guns.insert(std::make_pair(name,
+		Gun(dim, picture, shoot_picture, muzzle_flash, bullet, casings, firing_noises, ammo, power, offset, barrelOffset, 5)));
 	Gun& got = guns.at(name);
+	for (const auto& sound : firing_noises)
+	{
+		got.setSound(sound, this->sound.getID(sound));
+	}
 	got.cacheTexture(&this->renderer.atlas);
 	return &got;
 }
@@ -533,9 +540,9 @@ void vbl::Game::run()
 		{
 			SDL_Delay(15 - (Uint32)this->frameTime);
 		}
-		printf("update %fms\n", this->updateTime);
-		printf("render %fms\n", this->renderTime);
-		printf("total %fms\n", this->frameTime);
+		//printf("update %fms\n", this->updateTime);
+		//printf("render %fms\n", this->renderTime);
+		//printf("total %fms\n", this->frameTime);
 	}
 }
 
@@ -609,17 +616,6 @@ void vbl::Game::input()
 	text->setPos({ 0, 60 });
 	text = queueText(std::to_string(maf::random(500, 1500)));
 	text->setPos({ 0, 90 });
-	if (this->lmb)
-	{
-		MAABB box;
-		box.add({ 0, 0, 20, 20 });
-		particleManager.spawnCustom(new PBRParticle(600,
-			maf::fvec2{ (float)mousePos.x, (float)mousePos.y },
-			maf::fvec2{ maf::random(-10.0f, 10.0f),maf::random(-10.0f, 10.0f) },
-			"casing",
-			SDL_Rect{ 0, 0, 10, 30 },
-			0, 10, box));
-	}
 }
 
 void vbl::Game::updatePaused()
@@ -668,12 +664,20 @@ void vbl::Game::updateGame()
 		guy->update(this);
 		this->particleManager.addParticles(guy->getParticles());
 		this->sound.takeSounds(guy->getSounds());
-		float toMouseDir = (float)maf::pointTowardsNC(guy->getVisMid(), { (float)this->mousePos.x, (float)this->mousePos.y });
+		float toMouseDir = (float)maf::pointTowardsRawRad(guy->getVisMid(), { (float)this->mousePos.x, (float)this->mousePos.y });
 		if (guy->hasGun())
 		{
 			Gun* gun = guy->gun();
-			gun->setVisMid(maf::rotatePoint(gun->offset, guy->getVisMid(), toMouseDir));
+			gun->setAbout(guy->getVisMid());
+			gun->setRot(toMouseDir);
 			gun->setRotation(maf::radToDegrees(toMouseDir));
+			if (lmb)
+			{
+				printf("triggered\n");
+				gun->trigger(this, gun->getRotation(), this->tick);
+			}
+			this->particleManager.addParticles(gun->getParticles());
+			this->sound.takeSounds(gun->getSounds());
 		}
 	}
 	for (int i = 0; i < this->map.balls.size(); i++)
@@ -688,7 +692,7 @@ void vbl::Game::updateGame()
 		{
 			this->cameraShake(2, std::pow(ball->hitStrength() - 15, 2.0f) / 50);
 		}
-		if (ball->triggered())
+		if (ball->triggered() && this->allow_score)
 		{
 			this->particleManager.spewParticles(120, ball->getVisMid(), { 0,0 }, *ball->getParticle("cld"), {0,0,24,24}, 0, 0, 50, 10);
 			this->particleManager.spawnParticle(120, maf::setMiddle(ball->getVisMid(), {256,256}), {0,0}, "ball_glow", {0, 0, 256, 256}, 0, 0);

@@ -15,4 +15,11 @@ namespace maf
 	{
 		return (float)random(int(min * 100), int(max * 100)) / 100.0f;
 	}
+
+	// works with all std containers except forward_list
+	template <class C, class T>
+	T randomItem(C from)
+	{
+		return from[maf::random(0, (int)(from.size() - 1))];
+	};
 }

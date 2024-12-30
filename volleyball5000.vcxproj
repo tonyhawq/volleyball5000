@@ -153,6 +153,7 @@
     <ClCompile Include="Game\Guy.cpp" />
     <ClCompile Include="Game\Geometry.cpp" />
     <ClCompile Include="Game\maf.cpp" />
+    <ClCompile Include="Game\random.cpp" />
     <ClCompile Include="Game\Renderer.cpp" />
     <ClCompile Include="Game\Particles.cpp" />
     <ClCompile Include="Game\Sounds.cpp" />

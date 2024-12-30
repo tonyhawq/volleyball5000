@@ -117,12 +117,12 @@ namespace vbl
 		std::shared_ptr<vbl::Ball> makeBall(maf::fvec2 pos, const std::string& picture, const std::string& glowPicture);
 		std::shared_ptr<vbl::Ball> makePowerupBall(const std::string& picture, const std::string& glowPicture, Ball::PowerupType power);
 
-		Gun* makeGun(maf::fvec2 dim, strref name, strref picture, strref shoot_picture, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset);
+		Gun* makeGun(maf::fvec2 dim, strref name, strref picture, strref shoot_picture, strref muzzle_flash, strref bullet, const std::vector<std::string>& casings, const std::vector<std::string>& firing_noises, int ammo, float power, maf::fvec2 offset, maf::fvec2 barrelOffset);
 		const Gun* getGun(strref name);
 
 		void applyTeamPowerup(uint16_t team, Ball::PowerupType power, float length, bool onGuy = true);
 		void spawnRandomPowerup();
-		inline void selectNextPowerupTick() { this->nextPowerupTick = this->tick + maf::random(1 * 60, 2 * 60); }
+		inline void selectNextPowerupTick() { this->nextPowerupTick = this->tick + maf::random(30 * 60, 40 * 60); }
 		void score(uint16_t team, int amount = 1);
 		void clearPowerups();
 
@@ -156,6 +156,7 @@ namespace vbl
 			STATE_SCORED,
 		};
 	//private:
+		bool allow_score = false;
 		float simulatedBallResolution = 32.0f;
 		float realBallResolution = 1.0f;
 		float ballResolution = 1.0f;

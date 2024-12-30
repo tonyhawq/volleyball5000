@@ -5,8 +5,8 @@
 #include "random.h"
 #include "Game.h"
 
-vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture , SDL_Rect box, float rotation, float rotationSpeed)
-	:lifespan(lifespan), pos(pos), vel(vel), texture(picture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan), type(PType::Basic)
+vbl::Particle::Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture , SDL_Rect box, float rotation, float rotationSpeed, bool fade)
+	:lifespan(lifespan), pos(pos), vel(vel), texture(picture, box, rotation), rotationSpeed(rotationSpeed), maxLifespan(lifespan), type(PType::Basic), fade(fade)
 {
 	this->texture.setPos(this->pos);
 }

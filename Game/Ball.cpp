@@ -42,7 +42,7 @@ void vbl::Ball::bounceOff(const Geometry& geometry, const Actor::Ref sprite, boo
 	maf::fvec2 otherPos = sprite->getBox().getMiddle();
 	maf::fvec2 otherVel = sprite->getVel();
 	float speedDiff = abs(this->vel.x - otherVel.x) + abs(this->vel.y - otherVel.y);
-	float dir = (float)maf::pointTowards(this->box.getMiddle(), otherPos);
+	float dir = (float)maf::pointTowardsRad(this->box.getMiddle(), otherPos);
 	float sin = std::sin(dir);
 	float cos = std::cos(dir);
 	this->texture.rotate((float)maf::radToDegrees(dir) - this->texture.getRotation());
@@ -69,7 +69,7 @@ void vbl::Ball::bounceOff(const Geometry& geometry, const Actor::Ref sprite, boo
 		return;
 	}
 	float imparted = (abs(vel.x - prevVel.x) + abs(vel.y - prevVel.y)) / 2;
-	float guyDir = (float)maf::pointTowards(sprite->getBox().getMiddle(), this->getBox().getMiddle());
+	float guyDir = (float)maf::pointTowardsRad(sprite->getBox().getMiddle(), this->getBox().getMiddle());
 	sprite->setVel(sprite->getVel() + maf::fvec2{ maf::clamp(-imparted * std::sin(guyDir), -5.0f, 5.0f), maf::clamp(imparted * std::cos(guyDir), -5.0f, 5.0f) });
 	collisionParticle(int(std::max(speedDiff, 4.0f)));
 	// bounded lest it go on ad infinitum...

@@ -17,7 +17,7 @@ namespace vbl
 	class Particle
 	{
 	public:
-		Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed);
+		Particle(uint32_t lifespan, maf::fvec2 pos, maf::fvec2 vel, const IDedPicture& picture, SDL_Rect box, float rotation, float rotationSpeed, bool fade = true);
 
 		inline SpriteTexture& getTexture() { return this->texture; }
 		inline const SpriteTexture& getTexture() const { return this->texture; }

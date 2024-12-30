@@ -7,6 +7,10 @@ namespace maf
 	constexpr double pi = 3.14159265358979323846;
 	constexpr double oneeighty_over_pi = 180 / pi;
 	constexpr double pi_over_oneeighty = pi / 180;
+	// EVERYTHING IS IN DEGREES. PLEASE
+	
+	// degrees
+	constexpr double half_turn = 90;
 
 	inline double radToDegrees(double rad) {
 		return rad * oneeighty_over_pi;
@@ -126,14 +130,14 @@ namespace maf
 		return { sign(in.x), sign(in.y) };
 	}
 
-	inline double pointTowardsNC(maf::fvec2 from, maf::fvec2 to)
+	inline double pointTowardsRawRad(maf::fvec2 from, maf::fvec2 to)
 	{
 		return std::atan2(to.y - from.y, to.x - from.x);
 	}
 
-	inline double pointTowards(maf::fvec2 from, maf::fvec2 to)
+	inline double pointTowardsRad(maf::fvec2 from, maf::fvec2 to)
 	{
-		return (pointTowardsNC(from, to) + 1.57079632679);
+		return (pointTowardsRawRad(from, to) + 1.57079632679);
 	}
 
 	inline fvec2 setMiddle(maf::fvec2 pos, maf::fvec2 dim)
@@ -145,13 +149,13 @@ namespace maf
 		};
 	}
 
-	inline fvec2 rotatePoint(maf::fvec2 point, float angle)
+	inline fvec2 rotatePointRad(maf::fvec2 point, float angle)
 	{
 		return { point.x * std::cos(angle) - point.y * std::sin(angle), point.y * std::cos(angle) + point.x * std::sin(angle) };
 	}
 
-	inline fvec2 rotatePoint(maf::fvec2 point, maf::fvec2 about, float angle)
+	inline fvec2 rotatePointRad(maf::fvec2 point, maf::fvec2 about, float angle)
 	{
-		return rotatePoint(point, angle) + about;
+		return rotatePointRad(point, angle) + about;
 	}
 }
