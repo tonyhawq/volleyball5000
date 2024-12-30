@@ -107,7 +107,7 @@ namespace vbl
 
 		inline void rotate(float degrees) { this->texture.rotate(degrees); }
 		inline void setRotation(float degrees) { this->texture.setRotation(degrees); }
-		inline float getRotation() { this->texture.getRotation(); }
+		inline float getRotation() { return this->texture.getRotation(); }
 
 		inline const SpriteTexture& getTexture() const { return this->texture; }
 		inline SpriteTexture& getTextureNC() { return this->texture; }

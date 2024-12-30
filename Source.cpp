@@ -27,6 +27,7 @@ int main(int args, char* argc[])
 	game.sound.setChannels(48);
 	game.sound.loadSound({ "content/sound/boink1.wav", "content/sound/boink2.wav", "content/sound/boink3.wav" }, "boink");
 	game.sound.loadSound({ "content/sound/crunch1.wav", "content/sound/crunch2.wav", "content/sound/crunch3.wav" }, "crunch");
+	game.sound.loadSound(std::string{ "content/sound/pistol_fire.wav" }, "pistol_fire");
 
 	game.map.load("content/maps/1.vbl5");
 	game.makeController("Player 1", 1);
@@ -97,13 +98,15 @@ int main(int args, char* argc[])
 		pair_str_t{ "content/graphics/pointer.png", "point"},
 		pair_str_t{ "content/graphics/casing.png", "casing"},
 		pair_str_t{ "content/graphics/blaster.png", "blaster"},
+		pair_str_t{ "content/graphics/shot.png", "shot"},
+		pair_str_t{ "content/graphics/bullet.png", "bullet"},
 	};
 	size_t rejects = game.renderer.atlas.addBulk(paths).size();
 	LOG("Texture atlas finished loading.");
 	LOG_F("Loaded {}/{} textures. {}/{} of those loaded had names.", paths.size() - rejects, paths.size(), names.size(), paths.size());
-	vbl::Gun* pistol = game.makeGun({ 60, 60 }, "pistol", "blaster", "blaster_shoot", "bullet", { "casing" }, { "pistol_fire", "pistol_fire_2" }, 999, 10.0f, { 50.0f, 0.0f }, { 0 });
+	vbl::Gun* pistol = game.makeGun({ 60, 60 }, "pistol", "blaster", "blaster_shoot", "shot", "bullet", { "casing" }, { "pistol_fire" }, 999, 10.0f, { 50.0f, 0.0f }, { 0 }, 15);
 	pistol->offset = { 50, 50 };
-	pistol->barrelOffset = pistol->offset + maf::fvec2{ (float)pistol->getTexture().dimensions().x / 2, (float)pistol->getTexture().dimensions().y / 2};
+	pistol->barrelOffset = pistol->offset + maf::fvec2{ (float)pistol->getTexture().dimensions().x / 2, (float)pistol->getTexture().dimensions().y / -2 + 5};
 	for (auto& guy : game.map.guys)
 	{
 		guy->giveGun(new vbl::Gun(*game.getGun("pistol")));
