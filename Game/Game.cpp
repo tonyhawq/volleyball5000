@@ -204,6 +204,34 @@ void vbl::Map::clearBalls()
 	this->balls.clear();
 }
 
+void vbl::Map::spawnActor(Actor::Ref actor)
+{
+	this->actors.push_back(actor);
+}
+
+void vbl::Map::deleteActor(int idx)
+{
+	if (idx < 0 || idx >= this->actors.size())
+	{
+		throw new std::out_of_range("Deleting actor was out of range.");
+	}
+	this->actors.erase(this->actors.begin() + idx);
+}
+
+bool vbl::Map::deleteActor(Actor::Ref actor)
+{
+	for (int i = 0; i < this->actors.size(); i++)
+	{
+		const Actor::Ref& present = this->actors[i];
+		if (present.get() == actor.get())
+		{
+			this->actors.erase(this->actors.begin() + i);
+			return true;
+		}
+	}
+	return false;
+}
+
 vbl::Game::Game(uint32_t width, uint32_t height, float scale)
 	:renderer(width, height, 2048, 2048, scale), sound(10), nextPowerupTick(0), traceEndTexture("NO_ASSIGN", { 0 }, 0.0f)
 {
@@ -515,7 +543,7 @@ void vbl::Game::input()
 {
 	for (auto& c : controllers)
 	{
-		c->update();
+		c->update(this);
 	}
 	SDL_Event e;
 	while (SDL_PollEvent(&e))
@@ -637,7 +665,7 @@ void vbl::Game::updateGame()
 	for (auto& guy : this->map.guys)
 	{
 		guy->setGravity(this->map.gravity);
-		guy->update(this->map.getGeometry(), this->tick);
+		guy->update(this);
 		this->particleManager.addParticles(guy->getParticles());
 		this->sound.takeSounds(guy->getSounds());
 		float toMouseDir = (float)maf::pointTowardsNC(guy->getVisMid(), { (float)this->mousePos.x, (float)this->mousePos.y });
@@ -652,8 +680,8 @@ void vbl::Game::updateGame()
 	{
 		std::shared_ptr<vbl::Ball> ball = this->map.balls[i];
 		ball->setGravity(this->map.gravity);
-		ball->update(this->map.getGeometry(), this->map.actors, this->tick, 1.0f);
-		ball->trace(this->map.geometry, this->map.actors, 200, 32);
+		ball->update(this);
+		ball->trace(this->map.geometry, this->map.actors, this->simulatedBallResolution, 2000, 10);
 		this->particleManager.addParticles(ball->getParticles());
 		this->sound.takeSounds(ball->getSounds());
 		if (ball->hitGuy() && ball->hitStrength() > 15)
@@ -701,6 +729,18 @@ void vbl::Game::updateGame()
 		spawnRandomPowerup();
 		selectNextPowerupTick();
 	}
+}
+
+void vbl::Game::setSimulated(bool wanted)
+{
+	if (wanted)
+	{
+		this->isSimulated = true;
+		this->ballResolution = this->simulatedBallResolution;
+		return;
+	}
+	this->isSimulated = false;
+	this->ballResolution = this->realBallResolution;
 }
 
 void vbl::Game::spawnRandomPowerup()

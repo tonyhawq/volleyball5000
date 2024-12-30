@@ -95,6 +95,16 @@ vbl::MAABB::MAABB(const std::vector<maf::frect>& rects)
 	boxes = rects;
 }
 
+vbl::MAABB::MAABB(maf::frect rect)
+{
+	boxes = { rect };
+}
+
+vbl::MAABB::MAABB(maf::fvec2 pos, float resolution)
+{
+	boxes = { {pos.x - resolution / 2, pos.y - resolution / 2, resolution, resolution} };
+}
+
 vbl::MAABB::MAABB() {}
 
 void vbl::MAABB::add(maf::frect box)

@@ -6,18 +6,22 @@ vbl::Gun::Gun(maf::fvec2 dim, strref picture, strref shoot_picture, strref flash
 	:GameSprite(dim, Picture{ picture }, true),
 	ammo(ammo),
 	power(power),
-	picture(picture),
-	shoot_picture(shoot_picture),
-	bullet_picture(bullet_picture),
-	casing_pictures(casings),
-	firing_sound(firing_sound),
+	picture(Picture(picture)),
+	shoot_picture(Picture(shoot_picture)),
+	bullet_picture(Picture(bullet_picture)),
+	casing_pictures(),
+	firing_sounds(firing_sounds),
 	offset(offset),
 	barrelOffset(barrelOffset),
 	flash_picture(flash_picture),
 	firingDelay(firingDelay),
 	nextFireTick(0)
 {
-
+	this->casing_pictures.reserve(casings.size());
+	for (const auto& picture : casings)
+	{
+		this->casing_pictures.push_back(Picture(picture));
+	}
 }
 
 void vbl::Gun::setRot(float dir)
@@ -38,7 +42,7 @@ void vbl::Gun::trigger(Game* world, float dir, int tick)
 	}
 	ammo--;
 	this->nextFireTick = tick + this->firingDelay;
-	this->shoot(world, dir);
+	this->shoot(world, dir, tick);
 }
 
 void vbl::Gun::shoot(Game* world, float dir, int tick)
@@ -69,4 +73,7 @@ void vbl::Gun::shoot(Game* world, float dir, int tick)
 	)));
 	queuedSounds.push_back(this->soundMap[this->firing_sound]);
 	world->spawnActor({barrelPos.x, barrelPos.y, 6, 6}, {power * sin(dir), power * cos(dir)}, {this->bullet_picture}, dir);
+	Actor::Ref bullet = std::make_shared<Actor>(maf::fvec2{ 2, 2 }, this->bullet_picture, true);
+	bullet->setPos(this->pos);
+	bullet->setVel({ std::sin(dir) * 4, std::cos(dir) * 4 });
 }

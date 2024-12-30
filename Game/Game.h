@@ -46,6 +46,9 @@ namespace vbl
 		void removeBall(int* i);
 
 		void respawnGuy(std::shared_ptr<vbl::Guy> guy, uint16_t team);
+		void spawnActor(Actor::Ref actor);
+		void deleteActor(int idx);
+		bool deleteActor(Actor::Ref actor);
 
 		void resetMap();
 
@@ -59,7 +62,7 @@ namespace vbl
 		std::vector<std::shared_ptr<Ball>> balls;
 		std::unordered_map<std::string, size_t> guyMap;
 		std::vector<std::shared_ptr<Guy>> guys;
-		std::vector<std::shared_ptr<Sprite>> actors;
+		std::vector<Actor::Ref> actors;
 		std::vector<maf::fvec2> spawnpoints;
 		Geometry geometry;
 		uint32_t ballSpawnCooldown = 30;
@@ -78,7 +81,7 @@ namespace vbl
 			{
 				printf("destructing TeamData\n");
 			};
-			SpriteTexture waitingSprite = SpriteTexture(Picture{ "NO_ASSIGN" }, {0}, 0);
+			SpriteTexture waitingSprite = SpriteTexture(Picture{ "NO_ASSIGN" }, { 0 }, 0);
 			bool ready = false;
 			int score = 0;
 			maf::ivec2 scoreTextPos = { 0,0 };
@@ -119,7 +122,7 @@ namespace vbl
 
 		void applyTeamPowerup(uint16_t team, Ball::PowerupType power, float length, bool onGuy = true);
 		void spawnRandomPowerup();
-		inline void selectNextPowerupTick() { this->nextPowerupTick = this->tick + maf::random(1*60, 2*60); }
+		inline void selectNextPowerupTick() { this->nextPowerupTick = this->tick + maf::random(1 * 60, 2 * 60); }
 		void score(uint16_t team, int amount = 1);
 		void clearPowerups();
 
@@ -129,7 +132,7 @@ namespace vbl
 		void setWaitingScreen(uint16_t team, SDL_Rect box, const std::string& name);
 
 		void loadEffectSprite(Ball::PowerupType effect, const std::string& picture);
-		
+
 		int linkController(const std::string& controllerName, const std::string& guyName);
 		void unlink(const std::string& guyName);
 		Controller* getController(const std::string& name);
@@ -143,6 +146,8 @@ namespace vbl
 
 		void spawnFadeUp(uint16_t team, uint32_t duration);
 
+		void setSimulated(bool wanted);
+
 		enum class GameState
 		{
 			STATE_PAUSED,
@@ -151,6 +156,10 @@ namespace vbl
 			STATE_SCORED,
 		};
 	//private:
+		float simulatedBallResolution = 32.0f;
+		float realBallResolution = 1.0f;
+		float ballResolution = 1.0f;
+		bool isSimulated = false;
 		maf::ivec2 mousePos;
 		bool lmb = false;
 		bool rmb = false;

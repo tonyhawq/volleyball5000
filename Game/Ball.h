@@ -37,13 +37,14 @@ namespace vbl
 		inline bool isTrigger() const { return !this->powerup; }
 
 		uint8_t collidesWithGeometryBox(const GeometryBox* box);
-		const std::shared_ptr<vbl::Sprite> collidesWithActor(const std::vector<std::shared_ptr<vbl::Sprite>>& actors);
+		const Actor::Ref collidesWithActor(const std::vector<Actor::Ref>& actors);
 
-		const Trace& trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit = 9999);
+		const Trace& trace(const Geometry& geometry, const std::vector<Actor::Ref>& actors, float resolution, uint32_t length, int bounceLimit = 1000, maf::fvec2* ended_pos = NULL);
 
-		void bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated = false);
-		void moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, float resolution, bool simulated = false);
-		void update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t tick, float resolution, bool simulated = false);
+		void bounceOff(const Geometry& geometry, const Actor::Ref sprite, bool simulated = false);
+		void moveWithCollision(const Geometry& geometry, const std::vector<Actor::Ref>& actors, float resolution, bool simulated = false);
+		void update(Game* game) override;
+		void abstractUpdate(uint32_t tick, const Geometry& geometry, const std::vector<Actor::Ref>& actors, float resolution, bool simulated);
 
 		void reset(uint32_t spawnTime);
 

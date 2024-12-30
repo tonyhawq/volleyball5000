@@ -1,6 +1,7 @@
 #include "Ball.h"
 
 #include "Guy.h"
+#include "Game.h"
 
 vbl::Ball::Ball(const IDedPicture& picture, const IDedPicture& glowPicture, float diameter)
 	:GameSprite({diameter, diameter}, picture, true), wasTriggered(false), triggeredTeam(0), glowTexture(glowPicture, SDL_Rect{0, 0, (int)diameter, (int)diameter}, 0)
@@ -30,7 +31,7 @@ void vbl::Ball::trigger(const GeometryBox* box)
 	this->triggeredTeam = box->team;
 }
 
-void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::Sprite> sprite, bool simulated)
+void vbl::Ball::bounceOff(const Geometry& geometry, const Actor::Ref sprite, bool simulated)
 {
 	if (!sprite)
 	{
@@ -108,7 +109,7 @@ void vbl::Ball::bounceOff(const Geometry& geometry, const std::shared_ptr<vbl::S
 	}
 }
 
-const std::shared_ptr<vbl::Sprite> vbl::Ball::collidesWithActor(const std::vector<std::shared_ptr<vbl::Sprite>>& actors)
+const vbl::Actor::Ref vbl::Ball::collidesWithActor(const std::vector<Actor::Ref>& actors)
 {
 	for (const auto& actor : actors)
 	{
@@ -137,7 +138,7 @@ uint8_t vbl::Ball::collidesWithGeometryBox(const GeometryBox* box)
 	return 1;
 }
 
-void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>> actors, float resolution, bool simulated)
+void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<Actor::Ref>& actors, float resolution, bool simulated)
 {
 	float steps = (abs(vel.x) + abs(vel.y)) / resolution;
 	float increment = steps;
@@ -197,7 +198,12 @@ void vbl::Ball::moveWithCollision(const Geometry& geometry, const std::vector<st
 	}
 }
 
-void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t tick, float resolution, bool simulated)
+void vbl::Ball::update(Game* game)
+{
+	this->abstractUpdate(game->tick, game->map.geometry, game->map.actors, game->ballResolution, game->isSimulated);
+}
+
+void vbl::Ball::abstractUpdate(uint32_t tick, const Geometry& geometry, const std::vector<Actor::Ref>& actors, float resolution, bool simulated)
 {
 	if (this->spawning > 0 && !simulated)
 	{
@@ -209,7 +215,7 @@ void vbl::Ball::update(const Geometry& geometry, const std::vector<std::shared_p
 	this->triggeredTeam = 0;
 	this->vel.y += this->gravity;
 	moveWithCollision(geometry, actors, resolution, simulated);
-	const std::shared_ptr<vbl::Sprite> res = collidesWithActor(actors);
+	const Actor::Ref res = collidesWithActor(actors);
 	if (res)
 	{
 		this->bounceOff(geometry, res, simulated);
@@ -230,9 +236,11 @@ void vbl::Ball::reset(uint32_t spawnTime)
 	this->texture.rotate(-this->texture.getRotation());
 	this->spawnTime = spawnTime;
 	this->spawning = spawnTime;
+	this->wasTriggered = false;
+	this->triggeredTeam = 0;
 }
 
-const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::vector<std::shared_ptr<vbl::Sprite>>& actors, uint32_t length, float resolution, int bounceLimit)
+const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::vector<Actor::Ref>& actors, float resolution, uint32_t length, int bounceLimit, maf::fvec2* ended_pos)
 {
 	if (tracer.points.size() < length)
 	{
@@ -243,10 +251,12 @@ const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::ve
 	maf::fvec2 startingVel = this->vel;
 	float rot = this->texture.getRotation();
 	int bounces = 0;
+	bool prevTriggerState = this->wasTriggered;
+	uint16_t prevTriggerTeam = this->triggeredTeam;
 	int i = 0;
 	while (length > 0 /* && bounces < bounceLimit */)
 	{
-		update(geometry, actors, 0, resolution, true);
+		abstractUpdate(0, geometry, actors, resolution, true);
 		if (bounced)
 		{
 			bounces++;
@@ -257,15 +267,21 @@ const vbl::Ball::Trace& vbl::Ball::trace(const Geometry& geometry, const std::ve
 		{
 			this->wasTriggered = false;
 			this->triggeredTeam = 0;
-			//break;
+			break;
 		}
 		length--;
 		i++;
+	}
+	if (ended_pos)
+	{
+		*ended_pos = this->getPos();
 	}
 	this->texture.rotate(rot - this->texture.getRotation());
 	this->setPos(startingPos);
 	this->setVel(startingVel);
 	this->spawning = lastSpawning;
+	this->wasTriggered = prevTriggerState;
+	this->triggeredTeam = prevTriggerTeam;
 	this->tracer.length = i;
 	return this->tracer;
 }

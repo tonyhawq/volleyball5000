@@ -1,6 +1,7 @@
 #include "Guy.h"
 #include "random.h"
 #include "AI.h"
+#include "Game.h"
 
 vbl::Controller::Controller(const std::string& name, uint16_t team)
 	:name(name), dashQueuedown(0), jumpQueuedown(0), team(team), controlledBy(NULL)
@@ -36,7 +37,7 @@ void vbl::Controller::marry(AI* wife)
 	this->controlledBy = wife;
 }
 
-void vbl::Controller::update()
+void vbl::Controller::update(Game* game)
 {
 	if (jumpQueuedown > 0)
 	{
@@ -46,18 +47,43 @@ void vbl::Controller::update()
 	{
 		dashQueuedown--;
 	}
+	if (this->controlledBy)
+	{
+		this->controlledBy->input(game);
+	}
 }
 
 bool vbl::Controller::keyDown(int key)
 {
 	InputIDX in = keymap[key];
-	if (in == InputIDX::INPUT_NONE)
+	return this->setInput(in, true);
+}
+
+bool vbl::Controller::setInput(vbl::Controller::InputIDX input, bool value)
+{
+	if (input == InputIDX::INPUT_NONE)
 	{
 		return false;
 	}
-	this->hadInput = true;
-	this->inputs[(int)in] = true;
-	switch (in)
+	if (input == InputIDX::INPUT_ALL)
+	{
+		if (value)
+		{
+			this->inputs.set();
+		}
+		else
+		{
+			this->inputs.reset();
+		}
+		return true;
+	}
+	this->hadInput = value;
+	this->inputs[(int)input] = value;
+	if (!value)
+	{
+		return true;
+	}
+	switch (input)
 	{
 	case InputIDX::INPUT_UP:
 		queueJump();
@@ -269,8 +295,10 @@ void vbl::Guy::moveWithCollision(const Geometry& geometry)
 	}
 }
 
-void vbl::Guy::update(const Geometry& geometry, uint16_t tick)
+void vbl::Guy::update(Game* game)
 {
+	const vbl::Geometry& geometry = game->map.geometry;
+	uint32_t tick = game->tick;
 	updatePowerups();
 	maf::ivec2 input = { 0,0 };
 	if (this->controller)
